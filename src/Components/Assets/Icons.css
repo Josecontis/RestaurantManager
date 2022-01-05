@@ -1,0 +1,8 @@
+@font-face {
+    font-family: "icon-font";
+    src: url('restaurant-font-icons.ttf');
+}
+
+.icon {
+    font-family: "icon-font";
+}
