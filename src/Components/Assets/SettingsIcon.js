@@ -1,8 +1,8 @@
 import React from "react";
 import "./Icons.css";
 
-export const HomeIcon = ({ size, color }) => (
+export const SettingsIcon = ({ size, color }) => (
   <div className="icon" style={{ fontSize: size, color: color }}>
-    &#xE801;
+    &#xE805;
   </div>
 );
