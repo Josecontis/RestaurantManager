@@ -26,7 +26,7 @@ export const Sidebar = () => {
                   <b></b>
                   <div className="button">
                     <div className="icon-list">
-                      <SettingsIcon
+                      <ClocheIcon
                         size={24}
                         color={isActive === element ? "#ffffff" : "#eb7c68"}
                       />
