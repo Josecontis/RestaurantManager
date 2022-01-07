@@ -1,5 +1,5 @@
 input[type=text] {
-    padding: 15px 40px 15px 20px;
+    padding: 15px 15px 15px 40px;
     width: 250px;
     color: #b0b5c1;
     border: 1px solid #525252;
@@ -15,9 +15,12 @@ input[type=text]::placeholder {
     opacity: 1;
 }
 
-
-i {
+.search-field {
     position: relative;
-    left: -37px;
-    color: #8233C5;
+}
+
+.search-icon {
+    position: absolute;
+    top: 10px;
+    left: 10px;
 }

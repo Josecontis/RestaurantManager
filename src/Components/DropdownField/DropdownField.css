@@ -1,0 +1,40 @@
+.dropdown select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 250px;
+    color: #fff;
+    border: 1px solid #525252;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    background-color: #1f1d2c;
+    display: block;
+    height: 50px;
+    float: right;
+    margin: 5px 0px;
+    padding-left: 36px;
+    font-size: 16px;
+    line-height: 1.75;
+}
+
+.dropdown {
+    position: relative;
+}
+
+.dropdown select::-ms-expand {
+    display: none;
+}
+
+.dropdown .icon {
+    cursor: pointer;
+    position: absolute;
+    top: 16px;
+    left: 12px;
+}
+
+.dropdown option{
+    background-color: #cc0000; 
+    border-radius: 4px;
+    margin-top: 10px;
+}

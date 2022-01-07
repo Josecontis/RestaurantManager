@@ -16,11 +16,11 @@ export const Home = () => {
 
   return (
     <div className="home-page">
-      <div class="home-title-container">
+      <div className="home-title-container">
         <div className="home-title">Wellness Pizza</div>
         <div className="home-subtitle"> {date} </div>
       </div>
-      <div class="home-search-container">
+      <div className="home-search-container">
         <SearchField />
       </div>
       <Tab />

@@ -31,26 +31,3 @@
     float: right;
     margin-top: 5px;
 }
-
-input[type=text] {
-    padding: 15px 40px 15px 20px;
-    width: 250px;
-    border: 1px solid #525252;
-    font-size: 12px;
-    font-weight: 600;
-    border-radius: 8px;
-    background-color: #2e303f;
-
-}
-
-input[type=text]::placeholder {
-    color: #b0b5c1;
-    opacity: 1;
-}
-
-
-i {
-    position: relative;
-    left: -37px;
-    color: #8233C5;
-}

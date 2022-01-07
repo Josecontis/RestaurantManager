@@ -1,47 +1,36 @@
 import React from "react";
-import ReactDOM from "react-dom";
 import { useState } from "react";
+import { DropdownField } from "../DropdownField/DropdownField";
 
 import "./Tab.css";
 
-const Summary = () => (
-  <div className="tab-panel">
-    <div className="tab-panel-content">Summary Placeholder</div>
-  </div>
-);
-const Details = () => (
-  <div className="tab-panel">
-    <div className="tab-panel-content">Details Placeholder</div>
-  </div>
-);
-const MasterProject = () => (
-  <div className="tab-panel">
-    <div className="tab-panel-content">Master project Placeholder</div>
-  </div>
-);
-const Jobs = () => (
-  <div className="tab-panel">
-    <div className="tab-panel-content">Jobs Placeholder</div>
-  </div>
-);
+const HotDishes = () => <div className="tab-list"></div>;
+const ColdDishes = () => <div className="tab-list"></div>;
+const Soup = () => <div className="tab-list"></div>;
+const Grill = () => <div className="tab-list"></div>;
+const Pizzas = () => <div className="tab-list"></div>;
 
 export const Tab = () => {
   const tabs = [
     {
-      label: "Summary",
-      component: <Summary />,
+      label: "Piatti Caldi",
+      component: <HotDishes />,
     },
     {
-      label: "details",
-      component: <Details />,
+      label: "Piatti Freddi",
+      component: <ColdDishes />,
     },
     {
-      label: "Master Project",
-      component: <MasterProject />,
+      label: "Zuppe",
+      component: <Soup />,
     },
     {
-      label: "Jobs",
-      component: <Jobs />,
+      label: "Grigliate",
+      component: <Grill />,
+    },
+    {
+      label: "Pizze",
+      component: <Pizzas />,
     },
   ];
   const [selectedTab, setSelectedTab] = useState(0);
@@ -61,7 +50,15 @@ export const Tab = () => {
           </li>
         ))}
       </ul>
-      <div style={{ padding: "10px" }}>{tabs[selectedTab].component}</div>
+      <div className="tab-panel">
+        <div className="tab-panel-content">
+          <div className="tab-panel-title">Scegli Piatti</div>
+          <div className="tab-panel-filter">
+            <DropdownField />
+          </div>
+          <div style={{ padding: "10px" }}>{tabs[selectedTab].component}</div>
+        </div>
+      </div>
     </>
   );
 };
