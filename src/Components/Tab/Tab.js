@@ -38,6 +38,8 @@ export const Tab = () => {
     setSelectedTab(index);
   };
 
+  const options = ["A-Z", "Z-A", "Prezzo Crescente", "Prezzo Decrescente"];
+
   return (
     <>
       <ul className="tab-container">
@@ -54,7 +56,7 @@ export const Tab = () => {
         <div className="tab-panel-content">
           <div className="tab-panel-title">Scegli Piatti</div>
           <div className="tab-panel-filter">
-            <DropdownField />
+            <DropdownField options={options} />
           </div>
           <div style={{ padding: "10px" }}>{tabs[selectedTab].component}</div>
         </div>

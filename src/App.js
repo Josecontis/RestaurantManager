@@ -8,7 +8,7 @@ function App() {
     <BrowserRouter>
       <Sidebar />
       <Routes>
-        <Route path="/home" element={<Home/>} />
+        <Route path="/Orders" element={<Home/>} />
         {/* <Route path="/project" component={Projects} />
         <Route path="/about" component={About} />
         <Route path="/resume" component={Resume} />

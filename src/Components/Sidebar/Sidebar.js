@@ -5,11 +5,14 @@ import { ToLeftIcon } from "../Assets/ToLeftIcon";
 import { ToRightIcon } from "../Assets/ToRightIcon";
 import { ClocheIcon } from "../Assets/ClocheIcon";
 import { SettingsIcon } from "../Assets/SettingsIcon";
+import { useNavigate } from "react-router-dom";
 
+  
 export const Sidebar = () => {
-  const [isActive, setIsActive] = useState("Home");
+  const [isActive, setIsActive] = useState("Orders");
   const [isExpanded, setIsExpanded] = useState(true);
-  const menuList = ["Home", "Settings"];
+  const navigate = useNavigate();
+  const menuList = ["Orders", "Settings"];
   return (
     <>
       <div className={!isExpanded ? "navigation active" : "navigation"}>
@@ -19,17 +22,18 @@ export const Sidebar = () => {
               return (
                 <li
                   key={index}
-                  onClick={() => setIsActive(element)}
+                  onClick={() =>{ setIsActive(element); navigate(`/${element}`);}}
                   className={isActive === element ? "list active" : "list"}
+                  
                 >
                   <b></b>
                   <b></b>
                   <div className="button">
                     <div className="icon-list">
-                      <ClocheIcon
-                        size={24}
-                        color={isActive === element ? "#ffffff" : "#eb7c68"}
-                      />
+                        <ClocheIcon
+                          size={24}
+                          color={isActive === element ? "#ffffff" : "#eb7c68"}
+                        />
                     </div>
                     <span className="title">{element}</span>
                   </div>

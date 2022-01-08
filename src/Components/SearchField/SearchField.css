@@ -1,4 +1,4 @@
-input[type=text] {
+.search-field input[type=text] {
     padding: 15px 15px 15px 40px;
     width: 250px;
     color: #b0b5c1;
@@ -10,7 +10,7 @@ input[type=text] {
 
 }
 
-input[type=text]::placeholder {
+.search-field input[type=text]::placeholder {
     color: #b0b5c1;
     opacity: 1;
 }
