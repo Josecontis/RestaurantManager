@@ -1,10 +1,26 @@
 import React from "react";
 import { useState } from "react";
+import { Card } from "../Card/Card";
 import { DropdownField } from "../DropdownField/DropdownField";
 
 import "./Tab.css";
 
-const HotDishes = () => <div className="tab-list"></div>;
+const foods = [
+  {
+    name: "Spaghetti con salsa ai funghi",
+    price: "2.68",
+  },
+  {
+    name: "Gnocchi con zuppa di mango e salsa di cipolla",
+    price: "2.99",
+  },
+];
+
+const HotDishes = () => (
+  <div className="tab-list">
+    <Card cards={foods} />
+  </div>
+);
 const ColdDishes = () => <div className="tab-list"></div>;
 const Soup = () => <div className="tab-list"></div>;
 const Grill = () => <div className="tab-list"></div>;
