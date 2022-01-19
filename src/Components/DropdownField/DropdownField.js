@@ -27,26 +27,34 @@ export const DropdownField = ({ options }) => {
   const [index, setIndex] = useState(0);
 
   return (
-    <div ref={wrapperRef} class="select-box" onClick={() => setIsOpen(!isOpen)}>
-      <div class="select-box__current" tabindex="1">
-        <div class="select-box__value">
+    <div
+      ref={wrapperRef}
+      className="select-box"
+      onClick={() => setIsOpen(!isOpen)}
+    >
+      <div className="select-box__current" tabIndex="1">
+        <div className="select-box__value">
           <input
-            class="select-box__input"
+            className="select-box__input"
             type="radio"
             id={index}
             value={index + 1}
             name="OrderBy"
             checked="checked"
+            onChange={() => {}}
           />
-          <p class="select-box__input-text">{options[index]}</p>
+          <p className="select-box__input-text">{options[index]}</p>
         </div>
       </div>
       {isOpen ? (
-        <ul class="select-box__list">
+        <ul className="select-box__list">
           {options.map((el, idx) => {
             return (
               <li>
-                <label class="select-box__option" onClick={() => setIndex(idx)}>
+                <label
+                  className="select-box__option"
+                  onClick={() => setIndex(idx)}
+                >
                   {el}
                 </label>
               </li>
