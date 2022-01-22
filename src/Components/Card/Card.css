@@ -3,7 +3,19 @@
     background-color: #1f1d2c;
     width: 200px;
     border-radius: 20px;
+    transition: box-shadow .6s;
     padding: 30px;
+    margin-bottom: 50px;
+    transition: background 0.8s;
+}
+
+.card-container:hover {
+    box-shadow: 0 5px 15px rgba(255, 253, 253, 0.3);
+}
+
+.card-container:active {
+    background: #fafbfc1a;
+    transition: background 0s;
 }
 
 .card-image {
@@ -29,7 +41,7 @@
     margin-top: 10px;
     text-align: center;
     width: 100%;
-    color: #b0b5c1;
+    color: #fff;
     font-size: 16px;
 }
 

@@ -2,7 +2,6 @@
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    width: 250px;
     color: #fff;
     border: 1px solid #525252;
     font-size: 16px;
@@ -37,9 +36,6 @@
     border-radius: 4px;
     margin-top: 10px;
 }
-
-
-
 
 .select-box {
     position: relative;
@@ -106,6 +102,8 @@
     display: block;
     padding: 15px;
     color: #fff;
+    position: relative;
+    z-index: 10;
     font-size: 16px;
     font-weight: 600;
     background-color: #1f1d2c;
