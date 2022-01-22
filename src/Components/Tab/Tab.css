@@ -68,7 +68,13 @@
 }
 
 .tab-list {
-    display: flex;
     margin-top: 125px;
+    min-width: 200px;
     justify-content: space-between;
+    display: grid;
+    /*griglia grid*/
+    grid-template-columns: repeat(auto-fill, 186px);
+    /*suddivide la griglia grid in 4 colonne   eque*/
+    grid-gap: 30px;
+    /*spazio tra le colonne*/
 }

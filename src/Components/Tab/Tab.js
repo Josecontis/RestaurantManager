@@ -8,15 +8,45 @@ import "./Tab.css";
 const foods = [
   {
     name: "Spaghetti con salsa ai funghi",
-    description: "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
+    description:
+      "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
     price: "2.68",
     info: "Lattosio",
   },
   {
     name: "Gnocchi con zuppa di mango e salsa di cipolla",
-    description: "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
+    description:
+      "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
     price: "2.99",
     info: "Glutine, Lattosio",
+  },
+  {
+    name: "Gnocchi con zuppa di mango e salsa di cipolla",
+    description:
+      "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
+    price: "2.99",
+    info: "Glutine, Lattosio",
+  },
+  {
+    name: "Gnocchi con zuppa di mango e salsa di cipolla",
+    description:
+      "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
+    price: "2.99",
+    info: "Glutine, Lattosio",
+  },
+  {
+    name: "Gnocchi con zuppa di mango e salsa di cipolla",
+    description:
+      "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
+    price: "2.99",
+    info: "Glutine, Lattosio",
+  },
+  {
+    name: "Spaghetti con salsa ai funghi",
+    description:
+      "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
+    price: "2.68",
+    info: "Lattosio",
   },
 ];
 
