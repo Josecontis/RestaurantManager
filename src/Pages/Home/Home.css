@@ -4,6 +4,18 @@
     height: 100vh;
     padding: 20px;
     margin-left: 90px;
+    margin-right: 0px;
+    transition: margin-right 0.5s;
+}
+
+.home-page__collapsed {
+    width: auto;
+    color: #fff;
+    height: 100vh;
+    padding: 20px;
+    margin-left: 90px;
+    transition: margin-right 0.5s;
+    margin-right: 300px;
 }
 
 .home-title-container {

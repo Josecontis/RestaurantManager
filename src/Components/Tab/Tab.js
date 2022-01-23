@@ -5,62 +5,109 @@ import { DropdownField } from "../DropdownField/DropdownField";
 
 import "./Tab.css";
 
-const foods = [
-  {
-    name: "Spaghetti con salsa ai funghi",
-    description:
-      "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
-    price: "2.68",
-    info: "Lattosio",
-  },
-  {
-    name: "Gnocchi con zuppa di mango e salsa di cipolla",
-    description:
-      "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
-    price: "2.99",
-    info: "Glutine, Lattosio",
-  },
-  {
-    name: "Gnocchi con zuppa di mango e salsa di cipolla",
-    description:
-      "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
-    price: "2.99",
-    info: "Glutine, Lattosio",
-  },
-  {
-    name: "Gnocchi con zuppa di mango e salsa di cipolla",
-    description:
-      "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
-    price: "2.99",
-    info: "Glutine, Lattosio",
-  },
-  {
-    name: "Gnocchi con zuppa di mango e salsa di cipolla",
-    description:
-      "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
-    price: "2.99",
-    info: "Glutine, Lattosio",
-  },
-  {
-    name: "Spaghetti con salsa ai funghi",
-    description:
-      "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
-    price: "2.68",
-    info: "Lattosio",
-  },
-];
+export const Tab = ({ order }) => {
+  const foods = [
+    {
+      name: "Spaghetti con salsa ai funghi",
+      description:
+        "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
+      price: "2.68",
+      info: "Lattosio",
+      onClick: () => {
+        order((prevElems) => [
+          ...prevElems,
+          { name: "Spaghetti con salsa ai funghi", price: "2.68" },
+        ]);
+      },
+    },
+    {
+      name: "Gnocchi con zuppa di mango e salsa di cipolla",
+      description:
+        "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
+      price: "2.99",
+      info: "Glutine, Lattosio",
+      onClick: () => {
+        order((prevElems) => [
+          ...prevElems,
+          {
+            name: "Gnocchi con zuppa di mango e salsa di cipolla",
+            price: "2.99",
+          },
+        ]);
+      },
+    },
+    {
+      name: "Gnocchi con zuppa di mango e salsa di cipolla",
+      description:
+        "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
+      price: "2.99",
+      info: "Glutine, Lattosio",
+      onClick: () => {
+        order((prevElems) => [
+          ...prevElems,
+          {
+            name: "Gnocchi con zuppa di mango e salsa di cipolla",
+            price: "2.99",
+          },
+        ]);
+      },
+    },
+    {
+      name: "Gnocchi con zuppa di mango e salsa di cipolla",
+      description:
+        "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
+      price: "2.99",
+      info: "Glutine, Lattosio",
+      onClick: () => {
+        order((prevElems) => [
+          ...prevElems,
+          {
+            name: "Gnocchi con zuppa di mango e salsa di cipolla",
+            price: "2.99",
+          },
+        ]);
+      },
+    },
+    {
+      name: "Gnocchi con zuppa di mango e salsa di cipolla",
+      description:
+        "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
+      price: "2.99",
+      info: "Glutine, Lattosio",
+      onClick: () => {
+        order((prevElems) => [
+          ...prevElems,
+          {
+            name: "Gnocchi con zuppa di mango e salsa di cipolla",
+            price: "2.99",
+          },
+        ]);
+      },
+    },
+    {
+      name: "Spaghetti con salsa ai funghi",
+      description:
+        "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
+      price: "2.68",
+      info: "Lattosio",
+      onClick: () => {
+        order((prevElems) => [
+          ...prevElems,
+          {
+            name: "Spaghetti con salsa ai funghi",
+            price: "2.68",
+          },
+        ]);
+      },
+    },
+  ];
 
-const HotDishes = () => (
-  <div className="tab-list">
-    <Card cards={foods} />
-  </div>
-);
-const ColdDishes = () => <div className="tab-list"></div>;
-const Soup = () => <div className="tab-list"></div>;
-const Grill = () => <div className="tab-list"></div>;
-const Pizzas = () => <div className="tab-list"></div>;
+  const HotDishes = () => <Card cards={foods} />;
+  const ColdDishes = () => <div></div>;
+  const Soup = () => <div></div>;
+  const Grill = () => <div></div>;
+  const Pizzas = () => <div></div>;
 
-export const Tab = () => {
   const tabs = [
     {
       label: "Piatti Caldi",
@@ -88,7 +135,7 @@ export const Tab = () => {
     setSelectedTab(index);
   };
 
-  const options = ["A-Z", "Z-A", "Prezzo Crescente", "Prezzo Decrescente"];
+  const options = ["Mangia sul posto", "Ritira", "Consegna"];
 
   return (
     <>
@@ -109,7 +156,9 @@ export const Tab = () => {
           <div className="tab-panel-filter">
             <DropdownField options={options} />
           </div>
-          <div style={{ padding: "10px" }}>{tabs[selectedTab].component}</div>
+          <div style={{ padding: "10px" }}>
+            <div className="tab-list">{tabs[selectedTab].component}</div>
+          </div>
         </div>
       </div>
     </>

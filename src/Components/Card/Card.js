@@ -10,7 +10,7 @@ export const Card = ({ cards }) => {
   return cards.map((el, index) => {
     return (
       <div key={index}>
-        <div className="card-container">
+        <div className="card-container" onClick={el.onClick}>
           <div className="card-image" />
           <div className="card-title">{el.name}</div>
           <div className="card-price">{el.price} &euro;</div>

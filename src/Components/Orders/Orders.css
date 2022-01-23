@@ -1,16 +1,19 @@
-.navigation {
+.orders {
     position: fixed;
     top: 0px;
-    left: 0px;
+    right: 0px;
     bottom: 0px;
-    width: 85px;
+    width: 0px;
     border-top-right-radius: 10px;
     border-bottom-right-radius: 10px;
     box-sizing: initial;
-    border-left: 5px solid #1f1d2c;
     background: #1f1d2c;
     transition: width 0.5s;
     overflow-x: hidden;
+}
+
+.orders.active {
+    width: 300px;
 }
 
 .navigation ul {
