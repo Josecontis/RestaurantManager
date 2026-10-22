@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { formatSlot, getAdminOrders, orderTypeLabels } from "../../api";
+import {
+  assignDriver,
+  formatSlot,
+  getAdminOrders,
+  getDrivers,
+  orderTypeLabels,
+} from "../../api";
+import { DropdownField } from "../../Components/DropdownField/DropdownField";
 
 const REFRESH_SECONDS = 30;
 
@@ -17,22 +24,81 @@ const formatTime = (value) => {
     : `${date.toLocaleDateString("it-IT")}, ${time}`;
 };
 
+// The first choice takes the driver off the delivery
+const DriverDropdown = ({ order, drivers, isBusy, onChange }) => {
+  const choices = [
+    { id: null, label: "Nessun driver assegnato", isDisabled: false },
+    ...drivers.map((driver) => ({
+      id: driver.id,
+      label: isBusy(driver, order)
+        ? `${driver.name} (occupato a quest'ora)`
+        : `${driver.name}${driver.isActive ? "" : " (non in servizio)"}`,
+      isDisabled: isBusy(driver, order),
+    })),
+  ];
+
+  return (
+    <DropdownField
+      options={choices.map((choice) => choice.label)}
+      selectedIndex={Math.max(
+        0,
+        choices.findIndex((choice) => choice.id === order.driverId)
+      )}
+      disabledIndexes={choices
+        .map((choice, index) => (choice.isDisabled ? index : null))
+        .filter((index) => index !== null)}
+      onChange={(label, index) => onChange(order, choices[index].id)}
+    />
+  );
+};
+
 export const AdminOrders = ({ onUnauthorized }) => {
   const [orders, setOrders] = useState(null);
+  const [drivers, setDrivers] = useState([]);
   const [error, setError] = useState(null);
+
+  const handleError = useCallback(
+    (actionError) => {
+      if (actionError.status === 401) {
+        onUnauthorized();
+      } else {
+        setError(actionError.message);
+      }
+    },
+    [onUnauthorized]
+  );
 
   const load = useCallback(async () => {
     try {
-      setOrders(await getAdminOrders());
+      const [newOrders, newDrivers] = await Promise.all([
+        getAdminOrders(),
+        getDrivers(),
+      ]);
+      setOrders(newOrders);
+      setDrivers(newDrivers);
       setError(null);
     } catch (loadError) {
-      if (loadError.status === 401) {
-        onUnauthorized();
-      } else {
-        setError(loadError.message);
-      }
+      handleError(loadError);
     }
-  }, [onUnauthorized]);
+  }, [handleError]);
+
+  const changeDriver = async (order, driverId) => {
+    try {
+      await assignDriver(order.id, driverId);
+      load();
+    } catch (assignError) {
+      handleError(assignError);
+    }
+  };
+
+  // A driver already out with another delivery at the same time
+  const isBusy = (driver, order) =>
+    orders.some(
+      (other) =>
+        other.id !== order.id &&
+        other.driverId === driver.id &&
+        other.scheduledAt === order.scheduledAt
+    );
 
   // New orders appear without reloading the page
   useEffect(() => {
@@ -84,6 +150,16 @@ export const AdminOrders = ({ onUnauthorized }) => {
               )}
               {order.customerAddress && (
                 <div className="admin-card-detail">{order.customerAddress}</div>
+              )}
+              {order.orderType === "consegna" && (
+                <div className="admin-card-driver">
+                  <DriverDropdown
+                    order={order}
+                    drivers={drivers}
+                    isBusy={isBusy}
+                    onChange={changeDriver}
+                  />
+                </div>
               )}
               <ul className="admin-card-items">
                 {order.items.map((item, index) => (

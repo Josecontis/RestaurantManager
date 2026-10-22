@@ -239,6 +239,56 @@
     align-self: flex-start;
 }
 
+.admin-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Native time pickers with light icons on the dark background */
+.admin-input[type="time"] {
+    color-scheme: dark;
+}
+
+.admin-card-driver {
+    margin-top: 12px;
+}
+
+.admin-card-driver .select-box__current {
+    width: 100%;
+}
+
+.admin-hours {
+    max-width: 620px;
+}
+
+.admin-hours .admin-toolbar {
+    margin-top: 20px;
+}
+
+.admin-check {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.admin-check input {
+    width: 20px;
+    height: 20px;
+    accent-color: #ec7d6a;
+    cursor: pointer;
+}
+
+.admin-hours-times {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-hours-times .admin-input {
+    width: 120px;
+}
+
 @media (max-width: 768px) {
     .admin-page {
         margin-left: 0;
@@ -255,6 +305,17 @@
 
     .admin-row .admin-input {
         max-width: none;
+    }
+
+    .admin-list-item {
+        flex-wrap: wrap;
+    }
+
+    /* All four sections stay visible on a phone */
+    .admin-page .tab-item {
+        flex: 1;
+        min-width: 0;
+        padding: 10px 6px;
     }
 
     .admin-login {

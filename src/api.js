@@ -134,6 +134,33 @@ export const adminLogout = async () => {
 
 export const getAdminOrders = () => adminRequest("/api/admin/orders");
 
+// driverId null takes the driver off the delivery
+export const assignDriver = (orderId, driverId) =>
+  adminRequest(`/api/admin/orders/${orderId}/driver`, {
+    method: "PUT",
+    body: { driverId },
+  });
+
+// [{ weekday, isOpen, firstSlot, lastSlot }], weekday 1 = Monday ... 7 = Sunday
+export const getOpeningHours = () => adminRequest("/api/admin/opening-hours");
+
+export const saveOpeningHours = (week) =>
+  adminRequest("/api/admin/opening-hours", { method: "PUT", body: week });
+
+export const getDrivers = () => adminRequest("/api/admin/drivers");
+
+export const addDriver = (name) =>
+  adminRequest("/api/admin/drivers", { method: "POST", body: { name } });
+
+export const setDriverActive = (id, isActive) =>
+  adminRequest(`/api/admin/drivers/${id}`, {
+    method: "PATCH",
+    body: { isActive },
+  });
+
+export const removeDriver = (id) =>
+  adminRequest(`/api/admin/drivers/${id}`, { method: "DELETE" });
+
 export const getTablets = () => adminRequest("/api/admin/tablets");
 
 export const registerThisDevice = async (tableNumber) => {

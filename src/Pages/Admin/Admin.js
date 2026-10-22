@@ -1,5 +1,7 @@
 import { useCallback, useState } from "react";
 import { adminLogout, getAdmin } from "../../api";
+import { AdminDrivers } from "./AdminDrivers";
+import { AdminHours } from "./AdminHours";
 import { AdminLogin } from "./AdminLogin";
 import { AdminOrders } from "./AdminOrders";
 import { AdminTablets } from "./AdminTablets";
@@ -7,6 +9,8 @@ import "./Admin.css";
 
 const sections = [
   { label: "Ordini", component: AdminOrders },
+  { label: "Driver", component: AdminDrivers },
+  { label: "Orari", component: AdminHours },
   { label: "Tablet", component: AdminTablets },
 ];
 
