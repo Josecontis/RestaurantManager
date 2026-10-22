@@ -1,0 +1,264 @@
+.admin-page {
+    color: #fff;
+    min-height: 100vh;
+    padding: 20px 30px;
+    margin-left: 90px;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-title {
+    font-size: 24px;
+    font-weight: bolder;
+}
+
+.admin-subtitle {
+    margin-top: 5px;
+    color: #b0b5c1;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.admin-section {
+    margin-top: 25px;
+}
+
+.admin-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.admin-note {
+    color: #b0b5c1;
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.admin-button {
+    padding: 12px 22px;
+    border: none;
+    border-radius: 8px;
+    background-color: #ec7d6a;
+    box-shadow: 0px 0px 25px -9px #ec7d6a;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.admin-button:disabled {
+    cursor: wait;
+    filter: grayscale(0.4);
+}
+
+.admin-button--secondary {
+    background-color: #2e303f;
+    border: 1px solid #525252;
+    box-shadow: none;
+}
+
+.admin-button--secondary:hover {
+    border-color: #ec7d6a;
+}
+
+.admin-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #525252;
+    border-radius: 8px;
+    background-color: #2e303f;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.admin-input::placeholder {
+    color: #b0b5c1;
+}
+
+.admin-input:focus {
+    outline: none;
+    border-color: #ec7d6a;
+}
+
+.admin-error {
+    margin: 15px 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background-color: #ec7d6a26;
+    color: #ffb4a6;
+    font-size: 14px;
+}
+
+.admin-login {
+    max-width: 380px;
+    margin: 12vh auto 0;
+    padding: 35px 30px;
+    border-radius: 20px;
+    background-color: #1f1d2c;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.admin-login .admin-subtitle {
+    margin-bottom: 10px;
+}
+
+.admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.admin-card {
+    padding: 20px;
+    border-radius: 20px;
+    background-color: #1f1d2c;
+}
+
+.admin-card-header {
+    display: flex;
+    justify-content: space-between;
+    color: #b0b5c1;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.admin-card-number {
+    color: #ec7d6a;
+}
+
+.admin-card-main {
+    margin-top: 10px;
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.admin-badge {
+    display: inline-block;
+    margin: 8px 0 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background-color: #ec7d6a26;
+    color: #ec7d6a;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.admin-list-name .admin-badge {
+    margin: 0 0 0 10px;
+}
+
+.admin-card-detail {
+    margin-top: 4px;
+    color: #b0b5c1;
+    font-size: 14px;
+}
+
+.admin-card-items {
+    list-style: none;
+    margin-top: 12px;
+}
+
+.admin-card-items li,
+.admin-card-total {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 15px;
+}
+
+.admin-card-items li {
+    border-bottom: 1px solid #2e303f;
+}
+
+.admin-card-total {
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.admin-device {
+    max-width: 620px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.admin-device form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.admin-row {
+    display: flex;
+    gap: 12px;
+}
+
+.admin-row .admin-input {
+    max-width: 200px;
+}
+
+.admin-list-title {
+    margin-top: 30px;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.admin-list {
+    list-style: none;
+    max-width: 620px;
+    margin-top: 10px;
+}
+
+.admin-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 0;
+    border-bottom: 1px solid #2e303f;
+}
+
+.admin-list-name {
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.admin-device > .admin-button {
+    align-self: flex-start;
+}
+
+@media (max-width: 768px) {
+    .admin-page {
+        margin-left: 0;
+        padding: 16px 16px 90px;
+    }
+
+    .admin-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .admin-row {
+        flex-direction: column;
+    }
+
+    .admin-row .admin-input {
+        max-width: none;
+    }
+
+    .admin-login {
+        margin-top: 6vh;
+        padding: 25px 20px;
+    }
+}

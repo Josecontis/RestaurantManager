@@ -1,13 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getMenu, orderTypeCode, sendOrder } from "../../api";
 import { Orders } from "../../Components/Orders/Orders";
 import { SearchField } from "../../Components/SearchField/SearchField";
 import { Tab, orderTypes } from "../../Components/Tab/Tab";
 import "./Home.css";
 
 export const Home = () => {
+  const [menu, setMenu] = useState(null);
+  const [menuError, setMenuError] = useState(null);
+  const [menuAttempt, setMenuAttempt] = useState(0);
+  const [isMenuSlow, setIsMenuSlow] = useState(false);
   const [orders, setOrders] = useState([]);
   const [orderType, setOrderType] = useState(orderTypes[0]);
   const [lastOrder, setLastOrder] = useState(null);
+  const [isSending, setIsSending] = useState(false);
+  const [orderError, setOrderError] = useState(null);
   var today = new Date();
 
   var date =
@@ -19,8 +26,25 @@ export const Home = () => {
     " " +
     today.getFullYear();
 
+  useEffect(() => {
+    let isActive = true;
+    setMenuError(null);
+    setIsMenuSlow(false);
+    // The free server sleeps after 15 minutes and needs about a minute to wake up
+    const slowTimer = setTimeout(() => setIsMenuSlow(true), 4000);
+    getMenu()
+      .then((categories) => isActive && setMenu(categories))
+      .catch((error) => isActive && setMenuError(error.message))
+      .finally(() => clearTimeout(slowTimer));
+    return () => {
+      isActive = false;
+      clearTimeout(slowTimer);
+    };
+  }, [menuAttempt]);
+
   const addToOrder = (food) => {
     setLastOrder(null);
+    setOrderError(null);
     setOrders((prevElems) =>
       prevElems.some((el) => el.id === food.id)
         ? prevElems.map((el) =>
@@ -34,6 +58,7 @@ export const Home = () => {
   };
 
   const removeFromOrder = (id) => {
+    setOrderError(null);
     setOrders((prevElems) =>
       prevElems
         .map((el) => (el.id === id ? { ...el, quantity: el.quantity - 1 } : el))
@@ -41,15 +66,62 @@ export const Home = () => {
     );
   };
 
-  // Until the server exists the order is only shown as confirmed
-  const confirmOrder = () => {
-    setLastOrder({
-      foods: orders,
-      orderType: orderType,
-      total: orders.reduce((sum, el) => sum + el.price * el.quantity, 0),
-    });
-    setOrders([]);
+  const confirmOrder = async (details) => {
+    setIsSending(true);
+    setOrderError(null);
+    try {
+      const result = await sendOrder({
+        orderType: orderTypeCode(orderType),
+        items: orders.map((el) => ({ dishId: el.id, quantity: el.quantity })),
+        ...details,
+      });
+      setLastOrder({ ...details, ...result, foods: orders, orderType });
+      setOrders([]);
+    } catch (error) {
+      setOrderError(error.message);
+    } finally {
+      setIsSending(false);
+    }
   };
+
+  let content;
+  if (menu && menu.length !== 0) {
+    content = (
+      <Tab
+        categories={menu}
+        order={addToOrder}
+        onOrderTypeChange={(type) => {
+          setOrderType(type);
+          setOrderError(null);
+        }}
+      />
+    );
+  } else if (menu) {
+    content = <div className="home-message">Il menu è ancora vuoto.</div>;
+  } else if (menuError) {
+    content = (
+      <div className="home-message">
+        <div>{menuError}</div>
+        <button
+          className="home-message-button"
+          onClick={() => setMenuAttempt((attempt) => attempt + 1)}
+        >
+          Riprova
+        </button>
+      </div>
+    );
+  } else {
+    content = (
+      <div className="home-message">
+        <div>Caricamento del menu...</div>
+        {isMenuSlow && (
+          <div className="home-message-note">
+            Il server si sta avviando, può volerci fino a un minuto.
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -64,11 +136,13 @@ export const Home = () => {
       <div className="home-search-container">
         <SearchField />
       </div>
-      <Tab order={addToOrder} onOrderTypeChange={setOrderType} />
+      {content}
       <Orders
         foods={orders}
         orderType={orderType}
         lastOrder={lastOrder}
+        isSending={isSending}
+        error={orderError}
         onAdd={addToOrder}
         onRemove={removeFromOrder}
         onConfirm={confirmOrder}

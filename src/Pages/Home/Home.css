@@ -43,3 +43,51 @@
     float: right;
     margin-top: 5px;
 }
+.home-message {
+    clear: both;
+    padding-top: 120px;
+    text-align: center;
+    color: #b0b5c1;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.home-message-note {
+    margin-top: 10px;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.home-message-button {
+    margin-top: 20px;
+    padding: 12px 28px;
+    border: none;
+    border-radius: 8px;
+    background-color: #ec7d6a;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+@media (max-width: 1024px) {
+    .home-page__collapsed {
+        margin-right: 260px;
+    }
+}
+
+@media (max-width: 768px) {
+    .home-page,
+    .home-page__collapsed {
+        height: auto;
+        min-height: 100vh;
+        margin-left: 0;
+        margin-right: 0;
+        padding: 16px 16px 150px;
+    }
+
+    .home-search-container {
+        float: none;
+        margin-top: 15px;
+    }
+}

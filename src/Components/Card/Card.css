@@ -101,3 +101,35 @@
     cursor: pointer;
     color: #fff;
 }
+
+@media (max-width: 768px) {
+    .card-container {
+        padding: 20px 12px 16px;
+        margin-bottom: 40px;
+    }
+
+    .card-image {
+        top: -40px;
+        height: 100px;
+        width: 100px;
+    }
+
+    .card-title {
+        margin-top: 68px;
+        font-size: 16px;
+    }
+
+    .card-description {
+        height: 32px;
+        font-size: 12px;
+        line-height: 16px;
+    }
+
+    .card-price {
+        font-size: 16px;
+    }
+
+    .card-add {
+        padding: 8px 16px;
+    }
+}

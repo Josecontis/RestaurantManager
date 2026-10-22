@@ -1,22 +1,25 @@
 import "./App.css";
+import { Admin } from "./Pages/Admin/Admin";
 import { Home } from "./Pages/Home/Home";
 import { Sidebar } from "./Components/Sidebar/Sidebar";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 
 function App() {
   return (
-    <BrowserRouter>
+    // GitHub Pages cannot serve paths like /Orders: the route lives after the #
+    <HashRouter>
       <Sidebar />
       <Routes>
         <Route path="/" element={<Navigate to="/Orders" replace />} />
         <Route path="/Orders" element={<Home />} />
+        <Route path="/Admin" element={<Admin />} />
         {/* <Route path="/project" component={Projects} />
         <Route path="/about" component={About} />
         <Route path="/resume" component={Resume} />
         <Route path="/contacts" component={Contacts} /> */}
       </Routes>
       {/* <Footer /> */}
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 

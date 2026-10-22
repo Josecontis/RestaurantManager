@@ -78,3 +78,30 @@
     grid-gap: 30px;
     /*spazio tra le colonne*/
 }
+
+@media (max-width: 1024px) {
+    .tab-list {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .tab-container {
+        overflow-x: auto;
+    }
+
+    .tab-panel-title,
+    .tab-panel-filter {
+        float: none;
+    }
+
+    .tab-panel-filter {
+        margin-top: 12px;
+    }
+
+    .tab-list {
+        margin-top: 70px;
+        grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+        grid-gap: 16px;
+    }
+}

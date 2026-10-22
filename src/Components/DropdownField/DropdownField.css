@@ -112,3 +112,9 @@
     color: #546c84;
     background-color: #fff;
 }
+
+@media (max-width: 768px) {
+    .select-box__current {
+        width: 100%;
+    }
+}

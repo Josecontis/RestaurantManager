@@ -148,3 +148,43 @@
 
     color: #ec7d6a;
 }
+
+/* On small screens the menu becomes a bar at the bottom */
+@media (max-width: 768px) {
+    .navigation {
+        top: auto;
+        width: 100%;
+        height: 64px;
+        border-left: none;
+        border-radius: 16px 16px 0 0;
+        z-index: 10;
+    }
+
+    .navigation ul {
+        display: flex;
+        justify-content: space-around;
+        height: 100%;
+        padding-top: 0;
+    }
+
+    .navigation ul li {
+        width: auto;
+        border-radius: 10px;
+    }
+
+    .navigation ul li.active {
+        background: transparent;
+    }
+
+    .navigation ul li.active b:nth-child(1),
+    .navigation ul li.active b:nth-child(2),
+    .navigation ul li .button .title,
+    .navigation ul li.active .button .title {
+        display: none;
+    }
+
+    .button {
+        height: 64px;
+        padding: 7px 10px;
+    }
+}

@@ -1,18 +1,19 @@
-import { useState } from "react";
 import "./Sidebar.css";
 import { HomeIcon } from "../Assets/HomeIcon";
 import { ClocheIcon } from "../Assets/ClocheIcon";
 import { SettingsIcon } from "../Assets/SettingsIcon";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export const Sidebar = () => {
-  const [isActive, setIsActive] = useState("Orders");
+  // The active item follows the address, also with the browser back button
+  const location = useLocation();
+  const isActive = location.pathname.split("/")[1] || "Orders";
   const navigate = useNavigate();
   const IconList = [
     <ClocheIcon size={24} color={isActive ? "#ffffff" : "#eb7c68"} />,
     <SettingsIcon size={24} color={isActive ? "#ffffff" : "#eb7c68"} />,
   ];
-  const menuList = ["Orders", "Settings"];
+  const menuList = ["Orders", "Admin"];
   return (
     <>
       <div className="navigation">
@@ -23,7 +24,6 @@ export const Sidebar = () => {
                 <li
                   key={index}
                   onClick={() => {
-                    setIsActive(element);
                     navigate(`/${element}`);
                   }}
                   className={isActive === element ? "list active" : "list"}
