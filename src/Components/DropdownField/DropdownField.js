@@ -3,7 +3,14 @@ import { ArrowDownIcon } from "../Assets/ArrowDownIcon";
 import { ArrowUpIcon } from "../Assets/ArrowUpIcon";
 import "./DropdownField.css";
 
-export const DropdownField = ({ options, onChange }) => {
+// selectedIndex, when given, decides the shown option instead of the last click;
+// options listed in disabledIndexes are shown but cannot be chosen
+export const DropdownField = ({
+  options,
+  selectedIndex,
+  disabledIndexes = [],
+  onChange,
+}) => {
   const wrapperRef = useRef(null);
   useEffect(() => {
     /**
@@ -24,7 +31,8 @@ export const DropdownField = ({ options, onChange }) => {
   }, [wrapperRef]);
 
   const [isOpen, setIsOpen] = useState(false);
-  const [index, setIndex] = useState(0);
+  const [clickedIndex, setClickedIndex] = useState(0);
+  const index = selectedIndex ?? clickedIndex;
 
   return (
     <div
@@ -52,10 +60,18 @@ export const DropdownField = ({ options, onChange }) => {
             return (
               <li>
                 <label
-                  className="select-box__option"
+                  className={
+                    "select-box__option" +
+                    (disabledIndexes.includes(idx)
+                      ? " select-box__option--disabled"
+                      : "")
+                  }
                   onClick={() => {
-                    setIndex(idx);
-                    onChange && onChange(el);
+                    if (disabledIndexes.includes(idx)) {
+                      return;
+                    }
+                    setClickedIndex(idx);
+                    onChange && onChange(el, idx);
                   }}
                 >
                   {el}

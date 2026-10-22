@@ -116,6 +116,12 @@
     background-color: #fff;
 }
 
+.select-box__option--disabled,
+.select-box__option--disabled:hover {
+    color: #6f7280;
+    background-color: #1f1d2c;
+}
+
 @media (max-width: 768px) {
     .select-box__current {
         width: 100%;
