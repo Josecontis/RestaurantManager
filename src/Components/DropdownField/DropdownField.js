@@ -3,7 +3,7 @@ import { ArrowDownIcon } from "../Assets/ArrowDownIcon";
 import { ArrowUpIcon } from "../Assets/ArrowUpIcon";
 import "./DropdownField.css";
 
-export const DropdownField = ({ options }) => {
+export const DropdownField = ({ options, onChange }) => {
   const wrapperRef = useRef(null);
   useEffect(() => {
     /**
@@ -53,7 +53,10 @@ export const DropdownField = ({ options }) => {
               <li>
                 <label
                   className="select-box__option"
-                  onClick={() => setIndex(idx)}
+                  onClick={() => {
+                    setIndex(idx);
+                    onChange && onChange(el);
+                  }}
                 >
                   {el}
                 </label>

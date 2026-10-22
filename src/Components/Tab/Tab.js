@@ -5,137 +5,83 @@ import { DropdownField } from "../DropdownField/DropdownField";
 
 import "./Tab.css";
 
-export const Tab = ({ order }) => {
-  const foods = [
-    {
-      name: "Spaghetti con salsa ai funghi",
-      description:
-        "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
-      price: "2.68",
-      info: "Lattosio",
-      onClick: () => {
-        order((prevElems) => [
-          ...prevElems,
-          { name: "Spaghetti con salsa ai funghi", price: "2.68" },
-        ]);
-      },
-    },
-    {
-      name: "Gnocchi con zuppa di mango e salsa di cipolla",
-      description:
-        "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
-      price: "2.99",
-      info: "Glutine, Lattosio",
-      onClick: () => {
-        order((prevElems) => [
-          ...prevElems,
-          {
-            name: "Gnocchi con zuppa di mango e salsa di cipolla",
-            price: "2.99",
-          },
-        ]);
-      },
-    },
-    {
-      name: "Gnocchi con zuppa di mango e salsa di cipolla",
-      description:
-        "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
-      price: "2.99",
-      info: "Glutine, Lattosio",
-      onClick: () => {
-        order((prevElems) => [
-          ...prevElems,
-          {
-            name: "Gnocchi con zuppa di mango e salsa di cipolla",
-            price: "2.99",
-          },
-        ]);
-      },
-    },
-    {
-      name: "Gnocchi con zuppa di mango e salsa di cipolla",
-      description:
-        "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
-      price: "2.99",
-      info: "Glutine, Lattosio",
-      onClick: () => {
-        order((prevElems) => [
-          ...prevElems,
-          {
-            name: "Gnocchi con zuppa di mango e salsa di cipolla",
-            price: "2.99",
-          },
-        ]);
-      },
-    },
-    {
-      name: "Gnocchi con zuppa di mango e salsa di cipolla",
-      description:
-        "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
-      price: "2.99",
-      info: "Glutine, Lattosio",
-      onClick: () => {
-        order((prevElems) => [
-          ...prevElems,
-          {
-            name: "Gnocchi con zuppa di mango e salsa di cipolla",
-            price: "2.99",
-          },
-        ]);
-      },
-    },
-    {
-      name: "Spaghetti con salsa ai funghi",
-      description:
-        "Pasta con crema di funghi e senza panna un primo piatto con latte e un pizzico di amido di mais che permette al sugo di essere cremoso e denso.",
-      price: "2.68",
-      info: "Lattosio",
-      onClick: () => {
-        order((prevElems) => [
-          ...prevElems,
-          {
-            name: "Spaghetti con salsa ai funghi",
-            price: "2.68",
-          },
-        ]);
-      },
-    },
-  ];
+export const orderTypes = ["Mangia sul posto", "Ritira", "Consegna"];
 
-  const HotDishes = () => <Card cards={foods} />;
-  const ColdDishes = () => <div></div>;
-  const Soup = () => <div></div>;
-  const Grill = () => <div></div>;
-  const Pizzas = () => <div></div>;
+const pizzas = [
+  {
+    id: 1,
+    name: "Margherita",
+    description:
+      "Pomodoro San Marzano, mozzarella fior di latte, basilico fresco e olio extravergine d'oliva.",
+    price: 6,
+    info: "Glutine, Lattosio",
+  },
+  {
+    id: 2,
+    name: "Marinara",
+    description: "Pomodoro, aglio, origano e olio extravergine d'oliva.",
+    price: 5,
+    info: "Glutine",
+  },
+  {
+    id: 3,
+    name: "Diavola",
+    description: "Pomodoro, mozzarella fior di latte e salame piccante.",
+    price: 7.5,
+    info: "Glutine, Lattosio",
+  },
+  {
+    id: 4,
+    name: "Capricciosa",
+    description:
+      "Pomodoro, mozzarella, prosciutto cotto, funghi, carciofini e olive nere.",
+    price: 8.5,
+    info: "Glutine, Lattosio",
+  },
+  {
+    id: 5,
+    name: "Quattro Formaggi",
+    description: "Mozzarella, gorgonzola, fontina e parmigiano reggiano.",
+    price: 8,
+    info: "Glutine, Lattosio",
+  },
+  {
+    id: 6,
+    name: "Prosciutto e Funghi",
+    description: "Pomodoro, mozzarella, prosciutto cotto e funghi champignon.",
+    price: 7.5,
+    info: "Glutine, Lattosio",
+  },
+  {
+    id: 7,
+    name: "Bufalina",
+    description:
+      "Pomodoro, mozzarella di bufala campana, basilico e olio a crudo.",
+    price: 8.5,
+    info: "Glutine, Lattosio",
+  },
+  {
+    id: 8,
+    name: "Ortolana",
+    description: "Pomodoro, mozzarella, zucchine, melanzane e peperoni grigliati.",
+    price: 7.5,
+    info: "Glutine, Lattosio",
+  },
+];
 
+export const Tab = ({ order, onOrderTypeChange }) => {
+  // Only categories with at least one dish are shown
   const tabs = [
-    {
-      label: "Piatti Caldi",
-      component: <HotDishes />,
-    },
-    {
-      label: "Piatti Freddi",
-      component: <ColdDishes />,
-    },
-    {
-      label: "Zuppe",
-      component: <Soup />,
-    },
-    {
-      label: "Grigliate",
-      component: <Grill />,
-    },
-    {
-      label: "Pizze",
-      component: <Pizzas />,
-    },
-  ];
+    { label: "Piatti Caldi", foods: [] },
+    { label: "Piatti Freddi", foods: [] },
+    { label: "Zuppe", foods: [] },
+    { label: "Grigliate", foods: [] },
+    { label: "Pizze", foods: pizzas },
+  ].filter((item) => item.foods.length !== 0);
   const [selectedTab, setSelectedTab] = useState(0);
   const handleClick = (index) => {
     setSelectedTab(index);
   };
-
-  const options = ["Mangia sul posto", "Ritira", "Consegna"];
 
   return (
     <>
@@ -154,10 +100,12 @@ export const Tab = ({ order }) => {
         <div className="tab-panel-content">
           <div className="tab-panel-title">Scegli Piatti</div>
           <div className="tab-panel-filter">
-            <DropdownField options={options} />
+            <DropdownField options={orderTypes} onChange={onOrderTypeChange} />
           </div>
           <div style={{ padding: "10px" }}>
-            <div className="tab-list">{tabs[selectedTab].component}</div>
+            <div className="tab-list">
+              <Card cards={tabs[selectedTab].foods} onSelect={order} />
+            </div>
           </div>
         </div>
       </div>

@@ -73,7 +73,7 @@
     justify-content: space-between;
     display: grid;
     /*griglia grid*/
-    grid-template-columns: repeat(auto-fill, 186px);
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
     /*suddivide la griglia grid in 4 colonne   eque*/
     grid-gap: 30px;
     /*spazio tra le colonne*/
