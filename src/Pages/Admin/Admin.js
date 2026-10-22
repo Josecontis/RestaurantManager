@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { adminLogout, getAdmin } from "../../api";
+import { Button } from "../../Components/Button/Button";
 import { AdminDrivers } from "./AdminDrivers";
 import { AdminHours } from "./AdminHours";
 import { AdminLogin } from "./AdminLogin";
@@ -42,9 +43,9 @@ export const Admin = () => {
           <div className="admin-title">Area admin</div>
           <div className="admin-subtitle">Accesso come {admin.username}</div>
         </div>
-        <button className="admin-button admin-button--secondary" onClick={logout}>
+        <Button variant="secondary" onClick={logout}>
           Esci
-        </button>
+        </Button>
       </div>
       <ul className="tab-container">
         {sections.map((item, index) => (

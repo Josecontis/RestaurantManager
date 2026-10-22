@@ -1,0 +1,31 @@
+.list-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 0;
+    border-bottom: 1px solid #2e303f;
+}
+
+.list-row-title {
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.list-row-note {
+    color: #b0b5c1;
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.list-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+@media (max-width: 768px) {
+    .list-row {
+        flex-wrap: wrap;
+    }
+}

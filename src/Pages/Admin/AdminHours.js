@@ -1,5 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getOpeningHours, saveOpeningHours } from "../../api";
+import { Button } from "../../Components/Button/Button";
+import { ListRow } from "../../Components/ListRow/ListRow";
+import { TextField } from "../../Components/TextField/TextField";
+import { useAdminError } from "./useAdminError";
 
 const WEEKDAYS = [
   "Lunedì",
@@ -13,20 +17,9 @@ const WEEKDAYS = [
 
 export const AdminHours = ({ onUnauthorized }) => {
   const [week, setWeek] = useState(null);
-  const [error, setError] = useState(null);
+  const [error, setError, handleError] = useAdminError(onUnauthorized);
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-
-  const handleError = useCallback(
-    (actionError) => {
-      if (actionError.status === 401) {
-        onUnauthorized();
-      } else {
-        setError(actionError.message);
-      }
-    },
-    [onUnauthorized]
-  );
 
   useEffect(() => {
     getOpeningHours().then(setWeek).catch(handleError);
@@ -70,23 +63,25 @@ export const AdminHours = ({ onUnauthorized }) => {
         <form className="admin-hours" onSubmit={save}>
           <ul className="admin-list">
             {week.map((day) => (
-              <li key={day.weekday} className="admin-list-item">
-                <label className="admin-check">
-                  <input
-                    type="checkbox"
-                    checked={day.isOpen}
-                    onChange={(event) =>
-                      change(day.weekday, "isOpen", event.target.checked)
-                    }
-                  />
-                  <span className="admin-list-name">
-                    {WEEKDAYS[day.weekday - 1]}
-                  </span>
-                </label>
-                {day.isOpen ? (
-                  <div className="admin-hours-times">
+              <ListRow
+                key={day.weekday}
+                title={
+                  <label className="admin-check">
                     <input
-                      className="admin-input"
+                      type="checkbox"
+                      checked={day.isOpen}
+                      onChange={(event) =>
+                        change(day.weekday, "isOpen", event.target.checked)
+                      }
+                    />
+                    {WEEKDAYS[day.weekday - 1]}
+                  </label>
+                }
+              >
+                {day.isOpen ? (
+                  <>
+                    <TextField
+                      className="admin-hours-time"
                       type="time"
                       step="900"
                       required
@@ -97,8 +92,8 @@ export const AdminHours = ({ onUnauthorized }) => {
                       }
                     />
                     <span className="admin-note">-</span>
-                    <input
-                      className="admin-input"
+                    <TextField
+                      className="admin-hours-time"
                       type="time"
                       step="900"
                       required
@@ -108,18 +103,18 @@ export const AdminHours = ({ onUnauthorized }) => {
                         change(day.weekday, "lastSlot", event.target.value)
                       }
                     />
-                  </div>
+                  </>
                 ) : (
-                  <div className="admin-note">Chiuso</div>
+                  <span className="admin-note">Chiuso</span>
                 )}
-              </li>
+              </ListRow>
             ))}
           </ul>
           <div className="admin-toolbar">
             <div className="admin-note">{isSaved && "Orari salvati."}</div>
-            <button className="admin-button" type="submit" disabled={isSaving}>
+            <Button type="submit" disabled={isSaving}>
               {isSaving ? "Salvataggio..." : "Salva orari"}
-            </button>
+            </Button>
           </div>
         </form>
       )}

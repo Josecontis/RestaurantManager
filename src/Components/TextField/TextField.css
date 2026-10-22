@@ -1,0 +1,24 @@
+.text-field {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #525252;
+    border-radius: 8px;
+    background-color: #2e303f;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.text-field::placeholder {
+    color: #b0b5c1;
+}
+
+.text-field:focus {
+    outline: none;
+    border-color: #ec7d6a;
+}
+
+/* Native time pickers with light icons on the dark background */
+.text-field[type="time"] {
+    color-scheme: dark;
+}

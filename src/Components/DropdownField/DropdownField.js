@@ -42,15 +42,6 @@ export const DropdownField = ({
     >
       <div className="select-box__current" tabIndex="1">
         <div className="select-box__value">
-          <input
-            className="select-box__input"
-            type="radio"
-            id={index}
-            value={index + 1}
-            name="OrderBy"
-            checked="checked"
-            onChange={() => {}}
-          />
           <p className="select-box__input-text">{options[index]}</p>
         </div>
       </div>
@@ -58,7 +49,7 @@ export const DropdownField = ({
         <ul className="select-box__list">
           {options.map((el, idx) => {
             return (
-              <li>
+              <li key={idx}>
                 <label
                   className={
                     "select-box__option" +

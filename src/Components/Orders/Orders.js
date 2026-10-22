@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { formatSlot, getSlots, getTablet, orderTypeCode } from "../../api";
+import { Button } from "../Button/Button";
+import { TextField } from "../TextField/TextField";
 import "./Orders.css";
 
 const formatPrice = (value) =>
@@ -117,7 +119,7 @@ export const Orders = ({
               <span>Totale</span>
               <span>{formatPrice(lastOrder.total)}</span>
             </div>
-            <button
+            <Button
               className="orders-button"
               onClick={() => {
                 setIsOpen(false);
@@ -125,13 +127,17 @@ export const Orders = ({
               }}
             >
               Nuovo ordine
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="orders-content">
-            <button className="orders-back" onClick={() => setIsOpen(false)}>
+            <Button
+              variant="secondary"
+              className="orders-back"
+              onClick={() => setIsOpen(false)}
+            >
               Torna al menu
-            </button>
+            </Button>
             <div className="orders-title">Il tuo ordine</div>
             <div className="orders-subtitle">
               {orderType}
@@ -194,7 +200,7 @@ export const Orders = ({
             )}
             <div className="orders-fields">
               {typeCode === "sul_posto" && !tablet && (
-                <input
+                <TextField
                   type="number"
                   min="1"
                   placeholder="Numero del tavolo"
@@ -204,13 +210,12 @@ export const Orders = ({
               )}
               {typeCode !== "sul_posto" && (
                 <>
-                  <input
-                    type="text"
+                  <TextField
                     placeholder="Nome"
                     value={customerName}
                     onChange={(event) => setCustomerName(event.target.value)}
                   />
-                  <input
+                  <TextField
                     type="tel"
                     placeholder="Telefono"
                     value={customerPhone}
@@ -219,8 +224,7 @@ export const Orders = ({
                 </>
               )}
               {typeCode === "consegna" && (
-                <input
-                  type="text"
+                <TextField
                   placeholder="Indirizzo di consegna"
                   value={customerAddress}
                   onChange={(event) => setCustomerAddress(event.target.value)}
@@ -232,13 +236,13 @@ export const Orders = ({
               <span>Totale</span>
               <span>{formatPrice(total)}</span>
             </div>
-            <button
+            <Button
               className="orders-button"
               onClick={confirm}
               disabled={isSending}
             >
               {isSending ? "Invio in corso..." : "Conferma ordine"}
-            </button>
+            </Button>
           </div>
         )}
       </div>

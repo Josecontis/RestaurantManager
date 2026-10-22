@@ -6,7 +6,9 @@ import {
   getDrivers,
   orderTypeLabels,
 } from "../../api";
+import { Button } from "../../Components/Button/Button";
 import { DropdownField } from "../../Components/DropdownField/DropdownField";
+import { useAdminError } from "./useAdminError";
 
 const REFRESH_SECONDS = 30;
 
@@ -55,18 +57,7 @@ const DriverDropdown = ({ order, drivers, isBusy, onChange }) => {
 export const AdminOrders = ({ onUnauthorized }) => {
   const [orders, setOrders] = useState(null);
   const [drivers, setDrivers] = useState([]);
-  const [error, setError] = useState(null);
-
-  const handleError = useCallback(
-    (actionError) => {
-      if (actionError.status === 401) {
-        onUnauthorized();
-      } else {
-        setError(actionError.message);
-      }
-    },
-    [onUnauthorized]
-  );
+  const [error, setError, handleError] = useAdminError(onUnauthorized);
 
   const load = useCallback(async () => {
     try {
@@ -80,7 +71,7 @@ export const AdminOrders = ({ onUnauthorized }) => {
     } catch (loadError) {
       handleError(loadError);
     }
-  }, [handleError]);
+  }, [handleError, setError]);
 
   const changeDriver = async (order, driverId) => {
     try {
@@ -113,9 +104,9 @@ export const AdminOrders = ({ onUnauthorized }) => {
         <div className="admin-note">
           Gli ordini si aggiornano da soli ogni {REFRESH_SECONDS} secondi.
         </div>
-        <button className="admin-button admin-button--secondary" onClick={load}>
+        <Button variant="secondary" onClick={load}>
           Aggiorna
-        </button>
+        </Button>
       </div>
       {error && <div className="admin-error">{error}</div>}
       {orders === null && !error && (

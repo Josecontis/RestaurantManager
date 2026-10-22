@@ -5,23 +5,16 @@ import {
   registerThisDevice,
   removeTablet,
 } from "../../api";
+import { Button } from "../../Components/Button/Button";
+import { ListRow } from "../../Components/ListRow/ListRow";
+import { TextField } from "../../Components/TextField/TextField";
+import { useAdminError } from "./useAdminError";
 
 export const AdminTablets = ({ onUnauthorized }) => {
   const [tablets, setTablets] = useState(null);
   const [thisDevice, setThisDevice] = useState(getTablet());
   const [tableNumber, setTableNumber] = useState("");
-  const [error, setError] = useState(null);
-
-  const handleError = useCallback(
-    (actionError) => {
-      if (actionError.status === 401) {
-        onUnauthorized();
-      } else {
-        setError(actionError.message);
-      }
-    },
-    [onUnauthorized]
-  );
+  const [error, setError, handleError] = useAdminError(onUnauthorized);
 
   const load = useCallback(async () => {
     try {
@@ -69,12 +62,9 @@ export const AdminTablets = ({ onUnauthorized }) => {
               ordini "Mangia sul posto" partono da qui con il tavolo già
               inserito.
             </div>
-            <button
-              className="admin-button admin-button--secondary"
-              onClick={() => remove(thisDevice.id)}
-            >
+            <Button variant="secondary" onClick={() => remove(thisDevice.id)}>
               Annulla registrazione
-            </button>
+            </Button>
           </>
         ) : (
           <form onSubmit={register}>
@@ -84,17 +74,14 @@ export const AdminTablets = ({ onUnauthorized }) => {
               assegnare a un tavolo e registralo qui.
             </div>
             <div className="admin-row">
-              <input
-                className="admin-input"
+              <TextField
                 type="number"
                 min="1"
                 placeholder="Numero del tavolo"
                 value={tableNumber}
                 onChange={(event) => setTableNumber(event.target.value)}
               />
-              <button className="admin-button" type="submit">
-                Registra questo dispositivo
-              </button>
+              <Button type="submit">Registra questo dispositivo</Button>
             </div>
           </form>
         )}
@@ -107,26 +94,24 @@ export const AdminTablets = ({ onUnauthorized }) => {
       <ul className="admin-list">
         {tablets &&
           tablets.map((tablet) => (
-            <li key={tablet.id} className="admin-list-item">
-              <div>
-                <div className="admin-list-name">
+            <ListRow
+              key={tablet.id}
+              title={
+                <>
                   Tavolo {tablet.tableNumber}
                   {thisDevice && thisDevice.id === tablet.id && (
                     <span className="admin-badge">questo dispositivo</span>
                   )}
-                </div>
-                <div className="admin-note">
-                  Registrato il{" "}
-                  {new Date(tablet.createdAt).toLocaleDateString("it-IT")}
-                </div>
-              </div>
-              <button
-                className="admin-button admin-button--secondary"
-                onClick={() => remove(tablet.id)}
-              >
+                </>
+              }
+              note={`Registrato il ${new Date(
+                tablet.createdAt
+              ).toLocaleDateString("it-IT")}`}
+            >
+              <Button variant="secondary" onClick={() => remove(tablet.id)}>
                 Rimuovi
-              </button>
-            </li>
+              </Button>
+            </ListRow>
           ))}
       </ul>
     </div>

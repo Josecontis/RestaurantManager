@@ -1,24 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { addDriver, getDrivers, removeDriver, setDriverActive } from "../../api";
+import { Button } from "../../Components/Button/Button";
+import { ListRow } from "../../Components/ListRow/ListRow";
+import { TextField } from "../../Components/TextField/TextField";
+import { useAdminError } from "./useAdminError";
 
 export const AdminDrivers = ({ onUnauthorized }) => {
   const [drivers, setDrivers] = useState(null);
   const [name, setName] = useState("");
-  const [error, setError] = useState(null);
+  const [error, setError, handleError] = useAdminError(onUnauthorized);
   const activeCount = drivers
     ? drivers.filter((driver) => driver.isActive).length
     : 0;
-
-  const handleError = useCallback(
-    (actionError) => {
-      if (actionError.status === 401) {
-        onUnauthorized();
-      } else {
-        setError(actionError.message);
-      }
-    },
-    [onUnauthorized]
-  );
 
   const load = useCallback(async () => {
     try {
@@ -62,16 +55,12 @@ export const AdminDrivers = ({ onUnauthorized }) => {
         </div>
         <form onSubmit={add}>
           <div className="admin-row">
-            <input
-              className="admin-input"
-              type="text"
+            <TextField
               placeholder="Nome del driver"
               value={name}
               onChange={(event) => setName(event.target.value)}
             />
-            <button className="admin-button" type="submit">
-              Aggiungi driver
-            </button>
+            <Button type="submit">Aggiungi driver</Button>
           </div>
         </form>
       </div>
@@ -83,33 +72,26 @@ export const AdminDrivers = ({ onUnauthorized }) => {
       <ul className="admin-list">
         {drivers &&
           drivers.map((driver) => (
-            <li key={driver.id} className="admin-list-item">
-              <div>
-                <div className="admin-list-name">{driver.name}</div>
-                <div className="admin-note">
-                  {driver.isActive ? "In servizio" : "Non in servizio"}
-                </div>
-              </div>
-              <div className="admin-actions">
-                <button
-                  className={
-                    "admin-button" +
-                    (driver.isActive ? " admin-button--secondary" : "")
-                  }
-                  onClick={() =>
-                    run(() => setDriverActive(driver.id, !driver.isActive))
-                  }
-                >
-                  {driver.isActive ? "Togli dal servizio" : "Metti in servizio"}
-                </button>
-                <button
-                  className="admin-button admin-button--secondary"
-                  onClick={() => run(() => removeDriver(driver.id))}
-                >
-                  Rimuovi
-                </button>
-              </div>
-            </li>
+            <ListRow
+              key={driver.id}
+              title={driver.name}
+              note={driver.isActive ? "In servizio" : "Non in servizio"}
+            >
+              <Button
+                variant={driver.isActive ? "secondary" : "primary"}
+                onClick={() =>
+                  run(() => setDriverActive(driver.id, !driver.isActive))
+                }
+              >
+                {driver.isActive ? "Togli dal servizio" : "Metti in servizio"}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => run(() => removeDriver(driver.id))}
+              >
+                Rimuovi
+              </Button>
+            </ListRow>
           ))}
       </ul>
     </div>

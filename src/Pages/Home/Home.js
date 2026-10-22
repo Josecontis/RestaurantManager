@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getMenu, orderTypeCode, sendOrder } from "../../api";
+import { Button } from "../../Components/Button/Button";
 import { Orders } from "../../Components/Orders/Orders";
 import { SearchField } from "../../Components/SearchField/SearchField";
 import { Tab, orderTypes } from "../../Components/Tab/Tab";
@@ -104,12 +105,12 @@ export const Home = () => {
     content = (
       <div className="home-message">
         <div>{menuError}</div>
-        <button
+        <Button
           className="home-message-button"
           onClick={() => setMenuAttempt((attempt) => attempt + 1)}
         >
           Riprova
-        </button>
+        </Button>
       </div>
     );
   } else {

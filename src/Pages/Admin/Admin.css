@@ -41,54 +41,6 @@
     line-height: 20px;
 }
 
-.admin-button {
-    padding: 12px 22px;
-    border: none;
-    border-radius: 8px;
-    background-color: #ec7d6a;
-    box-shadow: 0px 0px 25px -9px #ec7d6a;
-    color: #fff;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.admin-button:disabled {
-    cursor: wait;
-    filter: grayscale(0.4);
-}
-
-.admin-button--secondary {
-    background-color: #2e303f;
-    border: 1px solid #525252;
-    box-shadow: none;
-}
-
-.admin-button--secondary:hover {
-    border-color: #ec7d6a;
-}
-
-.admin-input {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1px solid #525252;
-    border-radius: 8px;
-    background-color: #2e303f;
-    color: #fff;
-    font-size: 15px;
-    font-weight: 600;
-}
-
-.admin-input::placeholder {
-    color: #b0b5c1;
-}
-
-.admin-input:focus {
-    outline: none;
-    border-color: #ec7d6a;
-}
-
 .admin-error {
     margin: 15px 0;
     padding: 10px 12px;
@@ -154,7 +106,7 @@
     font-weight: 600;
 }
 
-.admin-list-name .admin-badge {
+.list-row-title .admin-badge {
     margin: 0 0 0 10px;
 }
 
@@ -205,7 +157,7 @@
     gap: 12px;
 }
 
-.admin-row .admin-input {
+.admin-row .text-field {
     max-width: 200px;
 }
 
@@ -221,40 +173,12 @@
     margin-top: 10px;
 }
 
-.admin-list-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-    padding: 15px 0;
-    border-bottom: 1px solid #2e303f;
-}
-
-.admin-list-name {
-    font-size: 17px;
-    font-weight: 600;
-}
-
-.admin-device > .admin-button {
+.admin-device > .app-button {
     align-self: flex-start;
-}
-
-.admin-actions {
-    display: flex;
-    gap: 10px;
-}
-
-/* Native time pickers with light icons on the dark background */
-.admin-input[type="time"] {
-    color-scheme: dark;
 }
 
 .admin-card-driver {
     margin-top: 12px;
-}
-
-.admin-card-driver .select-box__current {
-    width: 100%;
 }
 
 .admin-hours {
@@ -279,13 +203,7 @@
     cursor: pointer;
 }
 
-.admin-hours-times {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.admin-hours-times .admin-input {
+.admin-hours .admin-hours-time {
     width: 120px;
 }
 
@@ -303,12 +221,8 @@
         flex-direction: column;
     }
 
-    .admin-row .admin-input {
+    .admin-row .text-field {
         max-width: none;
-    }
-
-    .admin-list-item {
-        flex-wrap: wrap;
     }
 
     /* All four sections stay visible on a phone */

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { adminLogin } from "../../api";
+import { Button } from "../../Components/Button/Button";
+import { TextField } from "../../Components/TextField/TextField";
 
 export const AdminLogin = ({ onLogin }) => {
   const [username, setUsername] = useState("");
@@ -23,16 +25,13 @@ export const AdminLogin = ({ onLogin }) => {
     <form className="admin-login" onSubmit={submit}>
       <div className="admin-title">Area admin</div>
       <div className="admin-subtitle">Accedi per vedere ordini e tablet</div>
-      <input
-        className="admin-input"
-        type="text"
+      <TextField
         placeholder="Nome utente"
         autoComplete="username"
         value={username}
         onChange={(event) => setUsername(event.target.value)}
       />
-      <input
-        className="admin-input"
+      <TextField
         type="password"
         placeholder="Password"
         autoComplete="current-password"
@@ -40,9 +39,9 @@ export const AdminLogin = ({ onLogin }) => {
         onChange={(event) => setPassword(event.target.value)}
       />
       {error && <div className="admin-error">{error}</div>}
-      <button className="admin-button" type="submit" disabled={isSending}>
+      <Button type="submit" disabled={isSending}>
         {isSending ? "Accesso in corso..." : "Accedi"}
-      </button>
+      </Button>
     </form>
   );
 };

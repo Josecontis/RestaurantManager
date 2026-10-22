@@ -65,6 +65,7 @@
 
 .tab-panel-filter {
     float: right;
+    width: 250px;
 }
 
 .tab-list {
@@ -105,6 +106,7 @@
     }
 
     .tab-panel-filter {
+        width: auto;
         margin-top: 12px;
     }
 

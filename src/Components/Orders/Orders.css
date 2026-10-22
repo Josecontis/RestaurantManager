@@ -240,44 +240,11 @@
 .orders-button {
     margin-top: 20px;
     padding: 15px;
-    border: none;
-    border-radius: 8px;
-    background-color: #ec7d6a;
-    box-shadow: 0px 0px 25px -9px #ec7d6a;
-    color: #fff;
     font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
 }
 
-.orders-button:hover {
-    filter: brightness(1.08);
-}
-
-.orders-button:disabled {
-    cursor: wait;
-    filter: grayscale(0.4);
-}
-
-.orders-fields input {
-    width: 100%;
+.orders-fields .text-field {
     margin-top: 10px;
-    padding: 12px 14px;
-    border: 1px solid #525252;
-    border-radius: 8px;
-    background-color: #2e303f;
-    color: #fff;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.orders-fields input::placeholder {
-    color: #b0b5c1;
-}
-
-.orders-fields input:focus {
-    outline: none;
-    border-color: #ec7d6a;
 }
 
 .orders-fields {
@@ -375,13 +342,7 @@
         align-self: flex-start;
         margin-bottom: 15px;
         padding: 8px 14px;
-        border: 1px solid #525252;
-        border-radius: 8px;
-        background-color: #2e303f;
-        color: #fff;
         font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
     }
 
     .orders-bar {
