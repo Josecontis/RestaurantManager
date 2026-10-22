@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getTablet, orderTypeCode } from "../../api";
+import { formatSlot, getSlots, getTablet, orderTypeCode } from "../../api";
 import "./Orders.css";
 
 const formatPrice = (value) =>
@@ -26,6 +26,15 @@ export const Orders = ({
   const count = foods.reduce((sum, el) => sum + el.quantity, 0);
   const total = foods.reduce((sum, el) => sum + el.price * el.quantity, 0);
   const typeCode = orderTypeCode(orderType);
+  const needsSlot = typeCode === "ritiro" || typeCode === "consegna";
+  const [slotsResult, setSlotsResult] = useState(null);
+  const [slotsError, setSlotsError] = useState(null);
+  const [scheduledAt, setScheduledAt] = useState(null);
+  // A chosen time that is no longer free is dropped
+  const selectedSlot =
+    slotsResult && slotsResult.slots.some((slot) => slot.time === scheduledAt)
+      ? scheduledAt
+      : null;
   // Read at every render: a failed order can remove an unregistered tablet
   const tablet = getTablet();
 
@@ -35,13 +44,34 @@ export const Orders = ({
     }
   }, [isActive]);
 
+  // Free times depend on the order size; they are read again after a refused order
+  useEffect(() => {
+    if (!needsSlot || count === 0) {
+      return;
+    }
+    let isCurrent = true;
+    setSlotsResult(null);
+    setSlotsError(null);
+    getSlots(typeCode, count)
+      .then((result) => isCurrent && setSlotsResult(result))
+      .catch((loadError) => isCurrent && setSlotsError(loadError.message));
+    return () => {
+      isCurrent = false;
+    };
+  }, [needsSlot, typeCode, count, error]);
+
   const confirm = () => {
     if (typeCode === "sul_posto") {
       onConfirm(tablet ? {} : { tableNumber: parseInt(tableNumber, 10) });
     } else if (typeCode === "ritiro") {
-      onConfirm({ customerName, customerPhone });
+      onConfirm({ customerName, customerPhone, scheduledAt: selectedSlot });
     } else {
-      onConfirm({ customerName, customerPhone, customerAddress });
+      onConfirm({
+        customerName,
+        customerPhone,
+        customerAddress,
+        scheduledAt: selectedSlot,
+      });
     }
   };
 
@@ -66,6 +96,8 @@ export const Orders = ({
               {lastOrder.tableNumber
                 ? ` - Tavolo ${lastOrder.tableNumber}`
                 : ` - ${lastOrder.customerName}`}
+              {lastOrder.scheduledAt &&
+                ` - ore ${formatSlot(lastOrder.scheduledAt)}`}
             </div>
             <ul className="orders-list">
               {lastOrder.foods.map((el) => (
@@ -124,6 +156,42 @@ export const Orders = ({
                 </li>
               ))}
             </ul>
+            {needsSlot && (
+              <div className="orders-slots">
+                <div className="orders-slots-title">
+                  {typeCode === "ritiro"
+                    ? "Orario di ritiro"
+                    : "Orario di consegna"}
+                </div>
+                {slotsError && <div className="orders-note">{slotsError}</div>}
+                {!slotsResult && !slotsError && (
+                  <div className="orders-note">Caricamento degli orari...</div>
+                )}
+                {slotsResult && slotsResult.slots.length === 0 && (
+                  <div className="orders-note">
+                    {count > slotsResult.maxDishes
+                      ? `Ogni orario accetta al massimo ${slotsResult.maxDishes} pizze: per ordini più grandi chiama la pizzeria.`
+                      : "Nessun orario disponibile per oggi."}
+                  </div>
+                )}
+                {slotsResult && slotsResult.slots.length !== 0 && (
+                  <div className="orders-slots-list">
+                    {slotsResult.slots.map((slot) => (
+                      <button
+                        key={slot.time}
+                        className={
+                          "orders-slot" +
+                          (slot.time === selectedSlot ? " selected" : "")
+                        }
+                        onClick={() => setScheduledAt(slot.time)}
+                      >
+                        {slot.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <div className="orders-fields">
               {typeCode === "sul_posto" && !tablet && (
                 <input

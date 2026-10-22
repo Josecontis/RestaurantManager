@@ -10,6 +10,7 @@ import {
   verifyPassword,
 } from "./auth.js";
 import { query, setupDatabase, transaction } from "./db.js";
+import { MAX_DISHES_PER_SLOT, availableSlots } from "./slots.js";
 
 const PORT = process.env.PORT || 4000;
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "http://localhost:3000")
@@ -74,6 +75,24 @@ app.get("/api/menu", async (req, res) => {
   res.json(rows);
 });
 
+const dishCount = (items) =>
+  items.reduce((sum, item) => sum + item.quantity, 0);
+
+// Free pickup or delivery times for an order with this many dishes
+app.get("/api/slots", async (req, res) => {
+  const orderType = ["ritiro", "consegna"].includes(req.query.type)
+    ? req.query.type
+    : null;
+  const dishes = integer(Number(req.query.dishes), 1, MAX_ITEMS * MAX_QUANTITY);
+  if (!orderType || !dishes) {
+    throw new RequestError("Richiesta non valida");
+  }
+  res.json({
+    slots: await availableSlots(orderType, dishes),
+    maxDishes: MAX_DISHES_PER_SLOT,
+  });
+});
+
 const readOrder = async (req) => {
   const body = req.body || {};
   const order = {
@@ -83,6 +102,7 @@ const readOrder = async (req) => {
     customerName: null,
     customerPhone: null,
     customerAddress: null,
+    scheduledAt: null,
   };
   if (!order.orderType) {
     throw new RequestError("Tipo di ordine non valido");
@@ -138,6 +158,12 @@ const readOrder = async (req) => {
       throw new RequestError("Inserisci l'indirizzo di consegna");
     }
   }
+  // Checked against the free slots when the order is saved
+  order.scheduledAt =
+    typeof body.scheduledAt === "string" ? new Date(body.scheduledAt) : null;
+  if (!order.scheduledAt || isNaN(order.scheduledAt)) {
+    throw new RequestError("Scegli l'orario");
+  }
   return order;
 };
 
@@ -160,10 +186,29 @@ app.post("/api/orders", async (req, res) => {
   );
 
   const id = await transaction(async (client) => {
+    if (order.scheduledAt) {
+      // One order at a time, so two customers cannot take the last place in a slot
+      await client.query("SELECT pg_advisory_xact_lock(1)");
+      const slots = await availableSlots(
+        order.orderType,
+        dishCount(order.items),
+        client
+      );
+      if (
+        !slots.some(
+          (slot) => slot.time.getTime() === order.scheduledAt.getTime()
+        )
+      ) {
+        throw new RequestError(
+          "L'orario scelto non è più disponibile, scegline un altro",
+          409
+        );
+      }
+    }
     const { rows } = await client.query(
       `INSERT INTO orders (order_type, tablet_id, table_number, customer_name,
-         customer_phone, customer_address, total)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+         customer_phone, customer_address, scheduled_at, total)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id`,
       [
         order.orderType,
@@ -172,6 +217,7 @@ app.post("/api/orders", async (req, res) => {
         order.customerName,
         order.customerPhone,
         order.customerAddress,
+        order.scheduledAt,
         totalCents / 100,
       ]
     );
@@ -189,6 +235,7 @@ app.post("/api/orders", async (req, res) => {
     id,
     orderType: order.orderType,
     tableNumber: order.tableNumber,
+    scheduledAt: order.scheduledAt,
     total: totalCents / 100,
   });
 });
@@ -226,6 +273,7 @@ app.get("/api/admin/orders", requireAdmin, async (req, res) => {
        orders.customer_name AS "customerName",
        orders.customer_phone AS "customerPhone",
        orders.customer_address AS "customerAddress",
+       orders.scheduled_at AS "scheduledAt",
        orders.total::float8 AS total,
        orders.created_at AS "createdAt",
        json_agg(json_build_object(

@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS orders (
   customer_name TEXT,
   customer_phone TEXT,
   customer_address TEXT,
+  -- Pickup or delivery time, empty for orders eaten at the table
+  scheduled_at TIMESTAMPTZ,
   total NUMERIC(10, 2) NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

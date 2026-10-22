@@ -293,6 +293,54 @@
     font-size: 14px;
 }
 
+.orders-list {
+    min-height: 80px;
+}
+
+.orders-slots {
+    margin-bottom: 5px;
+}
+
+.orders-slots-title {
+    margin-top: 12px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.orders-note {
+    margin-top: 8px;
+    color: #b0b5c1;
+    font-size: 13px;
+    line-height: 18px;
+}
+
+.orders-slots-list {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.orders-slot {
+    padding: 8px 0;
+    border: 1px solid #525252;
+    border-radius: 8px;
+    background-color: #2e303f;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.orders-slot:hover {
+    border-color: #ec7d6a;
+}
+
+.orders-slot.selected {
+    border-color: #ec7d6a;
+    background-color: #ec7d6a;
+}
+
 /* Shown only on small screens */
 .orders-bar,
 .orders-back {

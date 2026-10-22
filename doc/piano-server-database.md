@@ -21,9 +21,9 @@ graph LR
 ```
 
 - **GitHub Pages** ospita solo file statici: l'app si apre subito, i dati arrivano dal server su Render (`.github/workflows/deploy.yml`).
-- **Render gratuito** spegne il server dopo 15 minuti senza visite e ci mette circa un minuto a ripartire: in quel minuto l'app mostra "Il server si sta avviando" (`src/Pages/Home/Home.js:29-43`).
+- **Render gratuito** spegne il server dopo 15 minuti senza visite e ci mette circa un minuto a ripartire: in quel minuto l'app mostra "Il server si sta avviando" (`src/Pages/Home/Home.js:30-44`).
 - **Neon** (Postgres gratuito, senza scadenza, 1 GB) conserva i dati, perché Render cancella i file del server a ogni spegnimento.
-- App e server hanno indirizzi diversi: il server accetta chiamate solo dai siti elencati in `ALLOWED_ORIGINS` (regola **CORS**, `server/index.js:48`) e il login admin usa un **token** inviato a ogni richiesta invece del cookie.
+- App e server hanno indirizzi diversi: il server accetta chiamate solo dai siti elencati in `ALLOWED_ORIGINS` (regola **CORS**, `server/index.js:49`) e il login admin usa un **token** inviato a ogni richiesta invece del cookie.
 - Il server crea da solo le tabelle mancanti e carica il menu iniziale se il database è vuoto (`server/db.js:31-37`): su Neon non serve lanciare niente a mano.
 
 ## Come il tablet conosce il suo tavolo
@@ -44,9 +44,9 @@ sequenceDiagram
   A->>P: "Esci", il tablet resta pronto per i clienti
 ```
 
-- Nel database c'è solo l'"impronta" del codice (hash), non il codice (`server/index.js:255-267`).
+- Nel database c'è solo l'"impronta" del codice (hash), non il codice (`server/index.js:303-315`).
 - Su un dispositivo **non registrato** chi sceglie "Mangia sul posto" scrive il numero del tavolo a mano (`src/Components/Orders/Orders.js`). È la richiesta iniziale ("inserire il numero tavolo, o in automatico"): il piano precedente prevedeva di rifiutare questi ordini, ma così si può provare tutto anche dal PC.
-- Se l'admin rimuove un tablet, al suo ordine successivo il server risponde "non più registrato", l'app dimentica il codice e chiede il tavolo a mano (`src/api.js:97-101`).
+- Se l'admin rimuove un tablet, al suo ordine successivo il server risponde "non più registrato", l'app dimentica il codice e chiede il tavolo a mano (`src/api.js:109-113`).
 - Se si cancellano i dati del browser del tablet, va registrato di nuovo.
 
 ## Come funziona un ordine e cosa vede l'admin
@@ -72,11 +72,48 @@ sequenceDiagram
 | Tipo di ordine | Dati richiesti al cliente |
 |---|---|
 | Mangia sul posto | niente se il tablet è registrato, altrimenti il numero del tavolo |
-| Ritira | nome e telefono |
-| Consegna | nome, telefono e indirizzo |
+| Ritira | nome, telefono e orario di ritiro scelto da un elenco |
+| Consegna | nome, telefono, indirizzo e orario di consegna scelto da un elenco |
 
-- I dati per "Ritira" e "Consegna" erano la decisione aperta 8: li ho scelti io, sono da confermare.
-- Il totale lo calcola il server con i prezzi del database (`server/index.js:144-160`).
+- Il numero del tavolo esiste solo per "Mangia sul posto": per ritiro e consegna il server lo ignora e salva l'orario.
+
+## Orari di ritiro e consegna
+
+| Regola | Valore (22/10/2026) |
+|---|---|
+| Fasce orarie | dalle 19:00 alle 23:00, ogni 15 minuti, solo per oggi, ora italiana |
+| Preavviso minimo | la prima fascia proposta è almeno 30 minuti dopo l'ora attuale |
+| Forno | al massimo 6 pizze per fascia, contando ritiri e consegne insieme |
+| Fattorino | al massimo 1 consegna per fascia |
+
+```mermaid
+sequenceDiagram
+  actor C as Cliente
+  participant P as App React
+  participant S as Server Express
+  participant D as Database Neon
+  C->>P: sceglie "Ritira" o "Consegna" e aggiunge 2 pizze
+  P->>S: GET /api/slots con tipo e numero di pizze
+  S->>D: per ogni fascia conta pizze e consegne già prenotate
+  S-->>P: solo le fasce che hanno ancora posto
+  C->>P: sceglie le 21:30 e conferma
+  P->>S: POST /api/orders con orario 21:30
+  S->>D: blocca le prenotazioni, ricontrolla la fascia, salva
+  alt la fascia si è riempita nel frattempo
+    S-->>P: "L'orario scelto non è più disponibile"
+    P->>S: chiede di nuovo le fasce libere
+  else c'è ancora posto
+    S-->>P: "Ordine n. 30 inviato - ore 21:30"
+  end
+```
+
+- Le fasce piene non compaiono: chi ordina 2 pizze vede solo le fasce dove ne restano almeno 2 nel forno; per la consegna anche quelle dove il fattorino è libero (`server/slots.js:17-37`).
+- Due ordini che arrivano nello stesso istante per l'ultimo posto vengono controllati uno alla volta: ne passa uno solo, l'altro riceve "orario non più disponibile" (`server/index.js:189-206`). Provato il 22/10/2026 con due richieste contemporanee.
+- Con più di 6 pizze nessuna fascia è possibile: l'app scrive di chiamare la pizzeria.
+- Gli ordini "Mangia sul posto" non occupano le fasce.
+- I valori della tabella sono costanti in `server/slots.js:4-13`: per cambiarli (per esempio 2 fattorini) si modifica quel file.
+- Dopo le 22:30 non ci sono più fasce per la serata: per provare ritiro e consegna serve farlo prima.
+- Il totale lo calcola il server con i prezzi del database (`server/index.js:170-186`).
 
 ## Dati salvati
 
@@ -116,6 +153,7 @@ erDiagram
     text customer_name "ritiro e consegna"
     text customer_phone "ritiro e consegna"
     text customer_address "solo consegna"
+    timestamp scheduled_at "orario di ritiro o consegna"
     numeric total
     timestamp created_at
   }
@@ -148,6 +186,7 @@ erDiagram
 |---|---|---|
 | `GET /api/health` | risponde "ok" e sveglia il database | tutti |
 | `GET /api/menu` | categorie con almeno un piatto, ognuna con i suoi piatti | tutti |
+| `GET /api/slots?type=ritiro&dishes=2` | fasce orarie ancora libere per quel tipo e quel numero di pizze | tutti |
 | `POST /api/orders` | salva un ordine e restituisce numero e totale | tutti |
 | `POST /api/admin/login` e `/logout` | entrata e uscita admin | admin |
 | `GET /api/admin/orders` | ultimi 100 ordini con tavolo o cliente, tipo, ora, piatti, totale | admin |
@@ -211,7 +250,7 @@ La versione di Node su Render è fissata a 22 dal campo `engines` di `server/pac
 | `.env.development` | nuovo | indirizzo del server sul PC |
 | `.github/workflows/deploy.yml` | nuovo | pubblicazione su GitHub Pages a ogni push su main |
 | `.gitignore` | modifica (3 righe aggiunte) | esclude `server/node_modules` e `server/.env` |
-| `server/` (`index.js`, `db.js`, `auth.js`, `db/schema.sql`, `db/seed.sql`, `scripts/create-admin.js`, `package.json`, `.env.example`) | nuovi | server, database, login admin, tablet |
+| `server/` (`index.js`, `db.js`, `auth.js`, `slots.js`, `db/schema.sql`, `db/seed.sql`, `scripts/create-admin.js`, `package.json`, `.env.example`) | nuovi | server, database, login admin, tablet, fasce orarie |
 
 | Tocca | Sì/No | Dettaglio |
 |---|---|---|
@@ -240,8 +279,11 @@ La versione di Node su Render è fissata a 22 dal campo `engines` di `server/pac
 | 5 | Dispositivi | PC, smartphone e tablet |
 | 6 | Git | commit diretti su `main` |
 | 7 | Hosting | app su GitHub Pages collegata al server su Render |
-| 8 | Dati per "Ritira" e "Consegna" | nome e telefono; per la consegna anche l'indirizzo. **Scelta mia, da confermare** |
-| 9 | Ordine "sul posto" da dispositivo non registrato | si scrive il numero del tavolo. **Scelta mia, da confermare** |
+| 8 | Dati per "Ritira" e "Consegna" | nome, telefono e orario da un elenco; per la consegna anche l'indirizzo |
+| 9 | Ordine "sul posto" da dispositivo non registrato | si scrive il numero del tavolo (confermato) |
+| 10 | Fasce orarie | 19:00-23:00 ogni 15 minuti, solo oggi, preavviso 30 minuti |
+| 11 | Fattorino | 1 consegna per fascia |
+| 12 | Forno | 6 pizze per fascia, ritiri e consegne insieme |
 
 ## Fonti (verificate il 22/10/2026)
 

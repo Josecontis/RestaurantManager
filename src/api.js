@@ -83,6 +83,18 @@ const adminRequest = async (path, options = {}) => {
 
 export const getMenu = () => request("/api/menu");
 
+// { slots: [{ time, label }], maxDishes } for pickup or delivery
+export const getSlots = (orderType, dishes) =>
+  request(`/api/slots?type=${orderType}&dishes=${dishes}`);
+
+// Slots are in Italian time wherever the device is
+export const formatSlot = (time) =>
+  new Date(time).toLocaleTimeString("it-IT", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Rome",
+  });
+
 export const sendOrder = async (order) => {
   const tablet = getTablet();
   try {

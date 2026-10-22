@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getAdminOrders, orderTypeLabels } from "../../api";
+import { formatSlot, getAdminOrders, orderTypeLabels } from "../../api";
 
 const REFRESH_SECONDS = 30;
 
@@ -75,6 +75,7 @@ export const AdminOrders = ({ onUnauthorized }) => {
               </div>
               <div className="admin-badge">
                 {orderTypeLabels[order.orderType]}
+                {order.scheduledAt && ` alle ${formatSlot(order.scheduledAt)}`}
               </div>
               {order.customerPhone && (
                 <div className="admin-card-detail">
