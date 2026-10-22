@@ -45,6 +45,12 @@ const phone = (value) =>
     ? value.trim()
     : null;
 
+// "HH:MM" in 24-hour format
+const timeOfDay = (value) =>
+  typeof value === "string" && /^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(value)
+    ? value
+    : null;
+
 const app = express();
 app.use(cors({ origin: ALLOWED_ORIGINS }));
 app.use(express.json({ limit: "20kb" }));
@@ -274,6 +280,7 @@ app.get("/api/admin/orders", requireAdmin, async (req, res) => {
        orders.customer_phone AS "customerPhone",
        orders.customer_address AS "customerAddress",
        orders.scheduled_at AS "scheduledAt",
+       orders.driver_id AS "driverId",
        orders.total::float8 AS total,
        orders.created_at AS "createdAt",
        json_agg(json_build_object(
@@ -289,6 +296,141 @@ app.get("/api/admin/orders", requireAdmin, async (req, res) => {
      LIMIT 100`
   );
   res.json(rows);
+});
+
+// A driver takes one delivery per slot
+app.put("/api/admin/orders/:id/driver", requireAdmin, async (req, res) => {
+  const id = integer(Number(req.params.id), 1, 2147483647);
+  // null takes the driver off the delivery
+  const driverId = req.body?.driverId;
+  if (!id || (driverId !== null && !integer(driverId, 1, 2147483647))) {
+    throw new RequestError("Richiesta non valida");
+  }
+  const { rows: orders } = await query(
+    "SELECT scheduled_at FROM orders WHERE id = $1 AND order_type = 'consegna'",
+    [id]
+  );
+  if (orders.length === 0) {
+    throw new RequestError("Consegna non trovata", 404);
+  }
+  if (driverId) {
+    const { rows: drivers } = await query(
+      "SELECT 1 FROM drivers WHERE id = $1",
+      [driverId]
+    );
+    if (drivers.length === 0) {
+      throw new RequestError("Driver non trovato", 404);
+    }
+    const { rows: busy } = await query(
+      `SELECT 1 FROM orders
+       WHERE driver_id = $1 AND id <> $2 AND scheduled_at = $3`,
+      [driverId, id, orders[0].scheduled_at]
+    );
+    if (busy.length !== 0) {
+      throw new RequestError(
+        "Questo driver ha già una consegna allo stesso orario",
+        409
+      );
+    }
+  }
+  await query("UPDATE orders SET driver_id = $1 WHERE id = $2", [driverId, id]);
+  res.status(204).end();
+});
+
+const openingHours = async () => {
+  const { rows } = await query(
+    `SELECT weekday, is_open AS "isOpen",
+       to_char(first_slot, 'HH24:MI') AS "firstSlot",
+       to_char(last_slot, 'HH24:MI') AS "lastSlot"
+     FROM opening_hours
+     ORDER BY weekday`
+  );
+  return rows;
+};
+
+app.get("/api/admin/opening-hours", requireAdmin, async (req, res) => {
+  res.json(await openingHours());
+});
+
+// The whole week is saved at once
+app.put("/api/admin/opening-hours", requireAdmin, async (req, res) => {
+  const days = Array.isArray(req.body) ? req.body : [];
+  const week = days.map((day) => ({
+    weekday: integer(day?.weekday, 1, 7),
+    isOpen: typeof day?.isOpen === "boolean" ? day.isOpen : null,
+    firstSlot: timeOfDay(day?.firstSlot),
+    lastSlot: timeOfDay(day?.lastSlot),
+  }));
+  if (
+    week.length !== 7 ||
+    new Set(week.map((day) => day.weekday)).size !== 7 ||
+    week.some(
+      (day) =>
+        !day.weekday || day.isOpen === null || !day.firstSlot || !day.lastSlot
+    )
+  ) {
+    throw new RequestError("Orari non validi");
+  }
+  if (week.some((day) => day.firstSlot > day.lastSlot)) {
+    throw new RequestError(
+      "L'ultima fascia non può essere prima della prima fascia"
+    );
+  }
+  await transaction(async (client) => {
+    for (const day of week) {
+      await client.query(
+        `UPDATE opening_hours
+         SET is_open = $2, first_slot = $3, last_slot = $4
+         WHERE weekday = $1`,
+        [day.weekday, day.isOpen, day.firstSlot, day.lastSlot]
+      );
+    }
+  });
+  res.json(await openingHours());
+});
+
+app.get("/api/admin/drivers", requireAdmin, async (req, res) => {
+  const { rows } = await query(
+    `SELECT id, name, is_active AS "isActive"
+     FROM drivers
+     ORDER BY name, id`
+  );
+  res.json(rows);
+});
+
+app.post("/api/admin/drivers", requireAdmin, async (req, res) => {
+  const name = text(req.body?.name, 2, 60);
+  if (!name) {
+    throw new RequestError("Inserisci il nome del driver");
+  }
+  const { rows } = await query(
+    `INSERT INTO drivers (name) VALUES ($1)
+     RETURNING id, name, is_active AS "isActive"`,
+    [name]
+  );
+  res.status(201).json(rows[0]);
+});
+
+// Drivers on duty decide how many deliveries each slot accepts
+app.patch("/api/admin/drivers/:id", requireAdmin, async (req, res) => {
+  const id = integer(Number(req.params.id), 1, 2147483647);
+  if (!id || typeof req.body?.isActive !== "boolean") {
+    throw new RequestError("Richiesta non valida");
+  }
+  await query("UPDATE drivers SET is_active = $1 WHERE id = $2", [
+    req.body.isActive,
+    id,
+  ]);
+  res.status(204).end();
+});
+
+app.delete("/api/admin/drivers/:id", requireAdmin, async (req, res) => {
+  const id = integer(Number(req.params.id), 1, 2147483647);
+  if (!id) {
+    throw new RequestError("Driver non valido");
+  }
+  await query("DELETE FROM drivers WHERE id = $1", [id]);
+  res.status(204).end();
 });
 
 app.get("/api/admin/tablets", requireAdmin, async (req, res) => {

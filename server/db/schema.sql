@@ -24,6 +24,26 @@ CREATE TABLE IF NOT EXISTS tablets (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Pickup and delivery hours, one row per weekday: 1 = Monday ... 7 = Sunday
+CREATE TABLE IF NOT EXISTS opening_hours (
+  weekday INTEGER PRIMARY KEY CHECK (weekday BETWEEN 1 AND 7),
+  is_open BOOLEAN NOT NULL DEFAULT true,
+  first_slot TIME NOT NULL DEFAULT '19:00',
+  last_slot TIME NOT NULL DEFAULT '23:00',
+  CHECK (first_slot <= last_slot)
+);
+
+INSERT INTO opening_hours (weekday)
+SELECT generate_series(1, 7)
+ON CONFLICT DO NOTHING;
+
+-- Each driver on duty takes one delivery per slot
+CREATE TABLE IF NOT EXISTS drivers (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT true
+);
+
 CREATE TABLE IF NOT EXISTS orders (
   id SERIAL PRIMARY KEY,
   order_type TEXT NOT NULL CHECK (order_type IN ('sul_posto', 'ritiro', 'consegna')),
@@ -34,6 +54,7 @@ CREATE TABLE IF NOT EXISTS orders (
   customer_address TEXT,
   -- Pickup or delivery time, empty for orders eaten at the table
   scheduled_at TIMESTAMPTZ,
+  driver_id INTEGER REFERENCES drivers (id) ON DELETE SET NULL,
   total NUMERIC(10, 2) NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
