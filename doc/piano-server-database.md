@@ -1,6 +1,6 @@
 # RestaurantManager: server, database, tavoli e area admin
 
-Data: 22/10/2026 · Stato: fasi 1, 3, 4, 5, 6, 8 fatte e provate in locale; fasi 2 e 7 (account e messa online) da fare insieme
+Data: 22/10/2026 · Stato: fasi 1, 3, 4, 5, 6, 8, 9 fatte e provate in locale; fasi 2 e 7 (account e messa online) da fare insieme
 
 ## Contesto
 
@@ -21,7 +21,7 @@ graph LR
 ```
 
 - **GitHub Pages** ospita solo file statici: l'app si apre subito, i dati arrivano dal server su Render (`.github/workflows/deploy.yml`).
-- **Render gratuito** spegne il server dopo 15 minuti senza visite e ci mette circa un minuto a ripartire: in quel minuto l'app mostra "Il server si sta avviando" (`src/Pages/Home/Home.js:30-44`).
+- **Render gratuito** spegne il server dopo 15 minuti senza visite e ci mette circa un minuto a ripartire: in quel minuto l'app mostra "Il server si sta avviando" (`src/Pages/Home/Home.js:31-45`).
 - **Neon** (Postgres gratuito, senza scadenza, 1 GB) conserva i dati, perché Render cancella i file del server a ogni spegnimento.
 - App e server hanno indirizzi diversi: il server accetta chiamate solo dai siti elencati in `ALLOWED_ORIGINS` (regola **CORS**, `server/index.js:55`) e il login admin usa un **token** inviato a ogni richiesta invece del cookie.
 - Il server crea da solo le tabelle mancanti e carica il menu iniziale se il database è vuoto (`server/db.js:31-37`): su Neon non serve lanciare niente a mano.
@@ -146,10 +146,26 @@ sequenceDiagram
   end
 ```
 
-- Un driver fa **una consegna per fascia**: nella tendina chi è già impegnato a quell'ora è grigio e non selezionabile, e il server lo rifiuta comunque (`server/index.js:301-338`, `src/Pages/Admin/AdminOrders.js:28-53`, `src/Pages/Admin/AdminOrders.js:95-101`).
+- Un driver fa **una consegna per fascia**: nella tendina chi è già impegnato a quell'ora è grigio e non selezionabile, e il server lo rifiuta comunque (`server/index.js:301-338`, `src/Pages/Admin/AdminOrders.js:30-55`, `src/Pages/Admin/AdminOrders.js:86-92`).
 - Nella tendina compaiono anche i driver non in servizio, con la scritta "(non in servizio)", per poterli usare in caso di imprevisti.
 - Gli orari sono controllati dal server: ore valide e ultima fascia non prima della prima (`server/index.js:355-390`).
 - Togliere un driver dal servizio non cambia le consegne già prenotate: diminuiscono solo i posti delle fasce ancora libere.
+
+## Componenti riusabili
+
+Regola dal 22/10/2026: se una schermata ha bisogno di un elemento che esiste già si usa lo stesso componente; se gli manca qualcosa gli si aggiunge un'opzione facoltativa, senza cambiare chi lo usa già.
+
+| Componente | Cosa fa | Opzioni | Dove si usa |
+|---|---|---|---|
+| `Button` (`src/Components/Button/Button.js`) | pulsante | `variant`: "primary" (corallo) o "secondary" (scuro con bordo grigio); `className` per spazi e dimensioni decisi dalla pagina | carrello ("Conferma ordine", "Nuovo ordine", "Torna al menu"), "Riprova" del menu, tutte le schede admin |
+| `TextField` (`src/Components/TextField/TextField.js`) | campo per testo, numero, telefono, password, orario | le stesse di un campo normale (`type`, `placeholder`, `value`...) | carrello (tavolo, nome, telefono, indirizzo), login admin, Driver, Orari, Tablet |
+| `DropdownField` (`src/Components/DropdownField/DropdownField.js:6-13`) | tendina | `selectedIndex`: voce mostrata decisa da fuori; `disabledIndexes`: voci grigie non selezionabili; la larghezza la decide la pagina che la usa | tipo di ordine nel menu, driver sulle consegne |
+| `ListRow` (`src/Components/ListRow/ListRow.js`) | riga di un elenco: titolo e nota a sinistra, pulsanti o campi a destra | `title`, `note`, contenuto a destra | schede Driver, Orari, Tablet |
+| `useAdminError` (`src/Pages/Admin/useAdminError.js`) | messaggio d'errore delle schede admin; con la sessione scaduta torna al login | | schede Ordini, Driver, Orari, Tablet |
+
+- Restano con uno stile proprio perché non sono pulsanti normali: la barra "Vedi ordine" su smartphone, i pulsanti +/- delle quantità, le fasce orarie del carrello, "Aggiungi" della card (fa parte della card cliccabile) e il campo di ricerca (ha l'icona e un suo stile).
+- Cambi visibili: il testo dei campi del carrello passa da 14 a 15 px e il pulsante "Riprova" prende lo stile comune (un po' più stretto, con l'ombra). Il resto è uguale: confrontate le schermate prima e dopo su PC e smartphone.
+- Prove del 22/10/2026 su PC e smartphone: ordine di ritiro completo, ordine al tavolo con e senza numero, "Torna al menu", login errato e giusto, driver assegnato e tolto dalla tendina, driver aggiunto, tolto dal servizio e rimosso, giorno chiuso e riaperto, tablet registrato e annullato, sessione scaduta che riporta al login. Nessun avviso in console.
 
 ## Dati salvati
 
@@ -259,6 +275,7 @@ Rispetto al piano iniziale `GET /api/categories` e `GET /api/dishes` sono divent
 | 6. Responsive | smartphone: menu in basso, carrello a tutto schermo con barra "Vedi ordine"; tablet verticale e orizzontale | fatta |
 | 7. Online | server su Render, app su GitHub Pages | **da fare insieme**: file pronti, servono gli account |
 | 8. Sottosezioni admin | schede Driver e Orari, driver sulle consegne, fasce calcolate da orari e driver in servizio | fatta |
+| 9. Componenti riusabili | pulsante, campo di testo, tendina e riga comuni a menu cliente e admin | fatta |
 
 Prove fatte il 22/10/2026 su PC (1440x900), smartphone (390x844), tablet verticale (820x1180) e orizzontale (1180x820): ordine al tavolo scritto a mano, consegna, errore senza tavolo, login sbagliato e giusto, registrazione tablet, ordine con tavolo automatico, ordine visto dall'admin. Le API sono state provate anche con dati sbagliati (tavolo mancante, telefono non valido, piatto inesistente, codice tablet falso, CORS da un sito non autorizzato).
 
@@ -294,14 +311,15 @@ La versione di Node su Render è fissata a 22 dal campo `engines` di `server/pac
 | `src/Components/Tab/Tab.js` | modifica | schede e piatti arrivano dal server; tipi di ordine presi da `src/api.js`; filtro della ricerca su categoria, nome, descrizione e ingredienti, senza distinguere maiuscole e accenti |
 | `src/Components/SearchField/SearchField.js` | modifica | il campo di ricerca comunica il testo scritto (prima non era collegato a niente) |
 | `src/Components/Card/Card.js` | modifica | pulsante "Aggiungi", prezzo in euro, "Maggiori info" non aggiunge più il piatto |
-| `src/Components/DropdownField/DropdownField.js` | modifica | comunica l'opzione scelta; riusabile: chi la usa può decidere la voce mostrata e le voci non selezionabili (`src/Components/DropdownField/DropdownField.js:6-13`). È la stessa tendina nel menu cliente e per il driver nell'admin |
+| `src/Components/DropdownField/DropdownField.js` | modifica | comunica l'opzione scelta; riusabile: chi la usa può decidere la voce mostrata e le voci non selezionabili. È la stessa tendina nel menu cliente e per il driver nell'admin. Tolto un campo nascosto che si ripeteva uguale in ogni tendina, aggiunta la `key` che React chiedeva |
 | `src/Components/Orders/Orders.js` | modifica | carrello, campi per tavolo o cliente, invio, conferma, barra "Vedi ordine" su smartphone |
 | `src/Pages/Home/Home.js` | modifica | carica il menu, gestisce carrello, tipo di ordine e invio |
-| `src/Pages/Admin/` (6 file `.js` + `Admin.css`) | nuovi | area admin: login, ordini con scelta del driver, driver, orari, tablet |
+| `src/Pages/Admin/` (7 file `.js` + `Admin.css`) | nuovi | area admin: login, ordini con scelta del driver, driver, orari, tablet, gestione errori comune |
+| `src/Components/Button/`, `src/Components/TextField/`, `src/Components/ListRow/` (`.js` + `.css`) | nuovi | componenti comuni a menu cliente e admin |
 | `src/api.js` | nuovo | tutte le chiamate al server e la memoria del browser (tablet e admin) |
 | `src/App.js` | modifica | `HashRouter`, `/` apre il menu, rotta `/Admin` |
 | `src/Components/Sidebar/Sidebar.js` | modifica | la voce "Settings" diventa "Admin"; l'icona attiva segue l'indirizzo |
-| file `.css` di Card, Tab, Orders, Home, Sidebar, SearchField, DropdownField, Modal | modifica | grafica nuova e regole per smartphone e tablet; il popup "Maggiori info" resta visibile anche scorrendo; la tendina aperta ha bordo grigio e angoli arrotondati e resta sopra le card |
+| file `.css` di Card, Tab, Orders, Home, Sidebar, SearchField, DropdownField, Modal | modifica | grafica nuova e regole per smartphone e tablet; il popup "Maggiori info" resta visibile anche scorrendo; la tendina aperta ha bordo grigio e angoli arrotondati e resta sopra le card; la larghezza della tendina del menu ora è decisa in `src/Components/Tab/Tab.css` |
 | `package.json` | modifica (1 riga) | `"homepage": "."`, necessario per GitHub Pages |
 | `.env.development` | nuovo | indirizzo del server sul PC |
 | `.github/workflows/deploy.yml` | nuovo | pubblicazione su GitHub Pages a ogni push su main |
@@ -320,7 +338,7 @@ La versione di Node su Render è fissata a 22 dal campo `engines` di `server/pac
 - **Prima visita lenta**: dopo 15 minuti senza visite il server su Render impiega circa un minuto a ripartire.
 - **Password**: `DATABASE_URL` solo su Render e in `server/.env` (escluso da git). La password admin passata a `npm run create-admin` resta nella cronologia del terminale: per una prova va bene.
 - **Server pubblico**: chiunque conosca l'indirizzo può inviare ordini "sul posto" scrivendo un tavolo qualsiasi. Per una prova è accettabile; non c'è un limite di tentativi sul login admin.
-- **Avviso React già presente**: la tendina (`src/Components/DropdownField/DropdownField.js:61`) genera un avviso in console per una `key` mancante; c'era già prima e non l'ho toccata. Per lo stesso tipo di avvisi preesistenti (variabili non usate in `Modal.js` e `Sidebar.js`) la pubblicazione usa `CI: false`, altrimenti si fermerebbe.
+- **Avvisi già presenti**: variabili non usate in `Modal.js` e `Sidebar.js`. La pubblicazione usa `CI: false`, altrimenti si fermerebbe. L'avviso della `key` mancante nella tendina è stato corretto il 22/10/2026.
 - **Limiti gratuiti**: Neon 1 GB, Render 750 ore al mese; Render dichiara che il piano gratuito non è per la produzione. Offerte verificate il 22/10/2026.
 - **Fuori da questo lavoro**: foto dei piatti, gestione del menu dall'area admin, stati dell'ordine (nuovo, in preparazione, servito), icone del menu laterale sempre bianche, date speciali di chiusura (ferie, festivi), accesso dei driver dal loro telefono, capienza del forno modificabile dall'admin. Quelli da fare sono nella sezione "Prossimi passi".
 - **Database già esistente**: la colonna `driver_id` è dentro la creazione della tabella `orders`, quindi un database creato prima di questa fase non la riceve da solo. Su Neon non c'è ancora nessun database, quindi oggi non serve niente; il database di prova sul PC l'ho aggiornato a mano.
@@ -334,14 +352,20 @@ Cose da fare prossimamente, nell'ordine suggerito. Al 22/10/2026 nessuna è iniz
 | # | Cosa | Perché serve | Note |
 |---|---|---|---|
 | 1 | **Messa online** (fasi 2 e 7) | oggi tutto gira solo sul PC, con un database di prova che sparisce | account Neon e Render, impostazioni GitHub, push |
-| 2 | **Componenti riusabili: pulsante e campo di testo comuni** a cliente e admin | ogni pagina ha i suoi pulsanti (`src/Components/Orders/Orders.css:240`, `src/Pages/Home/Home.css:61`, `src/Pages/Admin/Admin.css:44`) e i campi sono scritti due volte (`src/Components/Orders/Orders.css:262`, `src/Pages/Admin/Admin.css:72`) | i pulsanti lato cliente potrebbero cambiare un po' aspetto |
-| 3 | **Componenti riusabili: sistemare la tendina** (`DropdownField`) | larghezza fissa di 250px dentro il componente (`src/Components/DropdownField/DropdownField.css:53`), che nell'admin va forzata da fuori (`src/Pages/Admin/Admin.css:256`); campo nascosto con lo stesso nome e id in ogni tendina (`src/Components/DropdownField/DropdownField.js:45-53`); avviso React della `key` mancante (`src/Components/DropdownField/DropdownField.js:61`) | la tendina è già usata da menu cliente e admin: va riprovata in tutti e due |
-| 4 | **Componenti riusabili nell'admin** | le righe di Driver e Tablet (nome, stato, pulsanti) sono scritte due volte; il controllo "sessione scaduta" è copiato in 4 file (`src/Pages/Admin/AdminOrders.js:60`, `AdminDrivers.js:12`, `AdminHours.js:20`, `AdminTablets.js:15`) | |
+| 2 | Componenti riusabili: pulsante e campo di testo comuni | **fatto il 22/10/2026**, vedi "Componenti riusabili" | |
+| 3 | Componenti riusabili: sistemare la tendina | **fatto il 22/10/2026** | |
+| 4 | Componenti riusabili nell'admin | **fatto il 22/10/2026** | |
 | 5 | **Gestione del menu dall'admin** | oggi pizze, prezzi, ingredienti e foto si cambiano solo con comandi SQL | serve decidere dove salvare le foto gratis; gli ingredienti servono anche al chatbot (idea A) |
 | 6 | **Stati dell'ordine** (nuovo, in preparazione, pronto, consegnato), **avviso sonoro** per un ordine nuovo, **ordini ordinati per orario** di ritiro o consegna | oggi l'elenco si allunga e basta, e la cucina lavora per orario, non per ora di arrivo | |
 | 7 | **Orari: date speciali di chiusura** (ferie, festivi) e **capienza del forno e preavviso** modificabili dall'admin | oggi solo giorni della settimana; forno e preavviso sono nel codice (`server/slots.js:3-9`) | |
 | 8 | **Consegna: zona servita, costo di consegna, ordine minimo** | oggi si accetta qualunque indirizzo, gratis e senza minimo | |
 | 9 | **Piccole cose**: limite ai tentativi di login admin, test automatico che fallisce già (`src/App.test.js:4-8`), avvisi React in `Modal.js` e `Sidebar.js` | ordine e sicurezza | per un progetto di prova possono aspettare |
+| 10 | **Indirizzi suggeriti mentre si scrive** (autocompletamento di Google) | meno indirizzi sbagliati per i driver; il suggerimento porta con sé anche le coordinate, utili all'idea C | costi di Google e obbligo di carta di credito da verificare (vincolo costo zero); valutare anche un servizio gratuito basato su OpenStreetMap |
+| 11 | **Controllo del numero di telefono nell'app** | oggi lo controlla solo il server, in modo largo: da 6 a 20 cifre, spazi e "+" iniziale (`server/index.js:43-46`). L'app non controlla niente e l'errore arriva solo dopo "Conferma ordine" | decidere se accettare solo numeri italiani; messaggio sotto il campo mentre si scrive |
+| 12 | **Dopo l'ordine: campi puliti o schermata di ringraziamento** | oggi, anche dopo "Nuovo ordine", tavolo, nome, telefono e indirizzo restano scritti (`src/Components/Orders/Orders.js:21-24`): sul tablet del tavolo il cliente successivo li ritrova | idea: schermata "Grazie per l'ordine" con fuochi d'artificio a forma di pizze, pomodori, salami e mozzarelle, poi campi vuoti |
+| 13 | **Ordini ripetuti e troppi ordini** | decidere se lo stesso tablet o telefono può fare più ordini di seguito; bloccare chi manda moltissimi ordini in poco tempo, anche con programmi automatici (attacco "brute force", tentativi a raffica) | oggi non c'è nessun limite (vedi "Server pubblico" in "Note e rischi"): serve un limite di ordini per dispositivo, indirizzo IP e telefono nel server. Si collega all'idea B (ordini doppi) |
+| 14 | **Icona della scheda del browser e sito "white label"** | icona e nome dell'app sono ancora quelli di Create React App (`public/favicon.ico`, `public/manifest.json:2-3`) e il titolo della scheda è "Restaurant Managment System" (`public/index.html:33`) | white label = lo stesso sito riusabile da un altro ristorante (per esempio un futuro collaboratore) cambiando solo nome, logo, colori e menu da impostazioni, senza toccare il codice. Oggi il nome "Wellness Pizza" è scritto in `src/Pages/Home/Home.js:136` e il colore corallo `#ec7d6a` in 8 file |
+| 15 | **Foto vere delle pizze, visibili e cliccabili** | oggi la pizza è disegnata in CSS (`src/Components/Card/Card.css:24`); la colonna `image_url` esiste ma l'app non la usa | cliccando la foto si apre ingrandita; dipende dal punto 5 (dove salvare le foto e come caricarle dall'admin) |
 
 ### Nuove idee con l'AI
 
