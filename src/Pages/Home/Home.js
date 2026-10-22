@@ -15,6 +15,7 @@ export const Home = () => {
   const [lastOrder, setLastOrder] = useState(null);
   const [isSending, setIsSending] = useState(false);
   const [orderError, setOrderError] = useState(null);
+  const [search, setSearch] = useState("");
   var today = new Date();
 
   var date =
@@ -89,6 +90,7 @@ export const Home = () => {
     content = (
       <Tab
         categories={menu}
+        search={search}
         order={addToOrder}
         onOrderTypeChange={(type) => {
           setOrderType(type);
@@ -134,7 +136,7 @@ export const Home = () => {
         <div className="home-subtitle"> {date} </div>
       </div>
       <div className="home-search-container">
-        <SearchField />
+        <SearchField value={search} onChange={setSearch} />
       </div>
       {content}
       <Orders

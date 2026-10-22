@@ -196,7 +196,8 @@ La versione di Node su Render è fissata a 22 dal campo `engines` di `server/pac
 
 | File | Tipo | Cosa cambia |
 |---|---|---|
-| `src/Components/Tab/Tab.js` | modifica | schede e piatti arrivano dal server; tipi di ordine presi da `src/api.js` |
+| `src/Components/Tab/Tab.js` | modifica | schede e piatti arrivano dal server; tipi di ordine presi da `src/api.js`; filtro della ricerca su categoria, nome, descrizione e ingredienti, senza distinguere maiuscole e accenti |
+| `src/Components/SearchField/SearchField.js` | modifica | il campo di ricerca comunica il testo scritto (prima non era collegato a niente) |
 | `src/Components/Card/Card.js` | modifica | pulsante "Aggiungi", prezzo in euro, "Maggiori info" non aggiunge più il piatto |
 | `src/Components/DropdownField/DropdownField.js` | modifica | comunica l'opzione scelta |
 | `src/Components/Orders/Orders.js` | modifica | carrello, campi per tavolo o cliente, invio, conferma, barra "Vedi ordine" su smartphone |
@@ -226,7 +227,7 @@ La versione di Node su Render è fissata a 22 dal campo `engines` di `server/pac
 - **Server pubblico**: chiunque conosca l'indirizzo può inviare ordini "sul posto" scrivendo un tavolo qualsiasi. Per una prova è accettabile; non c'è un limite di tentativi sul login admin.
 - **Avviso React già presente**: la tendina (`src/Components/DropdownField/DropdownField.js:53`) genera un avviso in console per una `key` mancante; c'era già prima e non l'ho toccata. Per lo stesso tipo di avvisi preesistenti (variabili non usate in `Modal.js` e `Sidebar.js`) la pubblicazione usa `CI: false`, altrimenti si fermerebbe.
 - **Limiti gratuiti**: Neon 1 GB, Render 750 ore al mese; Render dichiara che il piano gratuito non è per la produzione. Offerte verificate il 22/10/2026.
-- **Fuori da questo lavoro**: ricerca, foto dei piatti, gestione del menu dall'area admin, stati dell'ordine (nuovo, in preparazione, servito), icone del menu laterale sempre bianche.
+- **Fuori da questo lavoro**: foto dei piatti, gestione del menu dall'area admin, stati dell'ordine (nuovo, in preparazione, servito), icone del menu laterale sempre bianche.
 
 ## Decisioni
 

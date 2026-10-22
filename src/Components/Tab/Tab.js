@@ -8,13 +8,36 @@ import "./Tab.css";
 
 export const orderTypes = Object.values(orderTypeLabels);
 
-export const Tab = ({ categories, order, onOrderTypeChange }) => {
-  // The server sends only categories with at least one dish
-  const tabs = categories.map((category) => ({
-    label: category.name,
-    foods: category.dishes.map((dish) => ({ ...dish, info: dish.allergens })),
-  }));
+// Lowercase and without accents, so "caffe" also finds "caffè"
+const normalize = (text) =>
+  text
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+
+export const Tab = ({ categories, search, order, onOrderTypeChange }) => {
+  const query = normalize(search.trim());
+  // Categories left without dishes by the search are hidden
+  const tabs = categories
+    .map((category) => ({
+      label: category.name,
+      foods: category.dishes
+        .filter((dish) =>
+          normalize(
+            [
+              category.name,
+              dish.name,
+              dish.description,
+              dish.ingredients || "",
+            ].join(" ")
+          ).includes(query)
+        )
+        .map((dish) => ({ ...dish, info: dish.allergens })),
+    }))
+    .filter((item) => item.foods.length !== 0);
   const [selectedTab, setSelectedTab] = useState(0);
+  // The search can hide the selected category
+  const currentTab = Math.min(selectedTab, tabs.length - 1);
   const handleClick = (index) => {
     setSelectedTab(index);
   };
@@ -25,7 +48,7 @@ export const Tab = ({ categories, order, onOrderTypeChange }) => {
         {tabs.map((item, index) => (
           <li
             key={index}
-            className={"tab-item " + (selectedTab === index && "active")}
+            className={"tab-item " + (currentTab === index && "active")}
             onClick={() => handleClick(index)}
           >
             {item.label}
@@ -39,9 +62,15 @@ export const Tab = ({ categories, order, onOrderTypeChange }) => {
             <DropdownField options={orderTypes} onChange={onOrderTypeChange} />
           </div>
           <div style={{ padding: "10px" }}>
-            <div className="tab-list">
-              <Card cards={tabs[selectedTab].foods} onSelect={order} />
-            </div>
+            {tabs.length !== 0 ? (
+              <div className="tab-list">
+                <Card cards={tabs[currentTab].foods} onSelect={order} />
+              </div>
+            ) : (
+              <div className="tab-empty">
+                Nessun piatto trovato per "{search.trim()}"
+              </div>
+            )}
           </div>
         </div>
       </div>

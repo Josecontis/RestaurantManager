@@ -79,6 +79,15 @@
     /*spazio tra le colonne*/
 }
 
+.tab-empty {
+    clear: both;
+    padding-top: 80px;
+    text-align: center;
+    color: #b0b5c1;
+    font-size: 16px;
+    font-weight: 600;
+}
+
 @media (max-width: 1024px) {
     .tab-list {
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
