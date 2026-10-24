@@ -6,6 +6,27 @@
   --accent-glow: #ec7d6a71;
 }
 
+/* Thin scrollbars that match the dark theme: the first two rules for Chrome,
+   Edge and Firefox, the ::-webkit ones for Safari */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #525252 transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background-color: #525252;
+}
+
 * {
   margin: 0;
   padding: 0;
