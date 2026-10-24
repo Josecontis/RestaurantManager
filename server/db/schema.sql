@@ -59,6 +59,10 @@ CREATE TABLE IF NOT EXISTS orders (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Kitchen progress of an order; ALTER so databases created before this column also get it
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'nuovo'
+  CHECK (status IN ('nuovo', 'in_preparazione', 'pronto', 'completato'));
+
 CREATE TABLE IF NOT EXISTS order_items (
   id SERIAL PRIMARY KEY,
   order_id INTEGER NOT NULL REFERENCES orders (id) ON DELETE CASCADE,

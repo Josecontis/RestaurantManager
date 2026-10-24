@@ -5,6 +5,7 @@ import {
   getAdminOrders,
   getDrivers,
   orderTypeLabels,
+  setOrderStatus,
 } from "../../api";
 import { Button } from "../../Components/Button/Button";
 import { DropdownField } from "../../Components/DropdownField/DropdownField";
@@ -25,6 +26,54 @@ const formatTime = (value) => {
     ? `Oggi, ${time}`
     : `${date.toLocaleDateString("it-IT")}, ${time}`;
 };
+
+const STATUSES = ["nuovo", "in_preparazione", "pronto", "completato"];
+
+const statusLabels = {
+  nuovo: "Nuovo",
+  in_preparazione: "In preparazione",
+  pronto: "Pronto",
+};
+
+// The last status is named after the order type
+const completedLabels = {
+  sul_posto: "Servito",
+  ritiro: "Ritirato",
+  consegna: "Consegnato",
+};
+
+const statusLabel = (status, orderType) =>
+  status === "completato" ? completedLabels[orderType] : statusLabels[status];
+
+// undefined for a completed order
+const nextStatus = (status) => STATUSES[STATUSES.indexOf(status) + 1];
+
+// Two short tones made by the browser, no sound file needed.
+// Browsers play it only after a click on the page, for example the admin login.
+const playNewOrderSound = () => {
+  try {
+    const context = new (window.AudioContext || window.webkitAudioContext)();
+    [880, 1320].forEach((frequency, index) => {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      const start = context.currentTime + index * 0.25;
+      oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(0.3, start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.2);
+      oscillator.connect(gain).connect(context.destination);
+      oscillator.start(start);
+      oscillator.stop(start + 0.2);
+    });
+    setTimeout(() => context.close(), 1000);
+  } catch {}
+};
+
+// Highest order number already seen, null before the first load. Kept outside the
+// component so orders that arrive while the admin is on another page still ring.
+let lastOrderId = null;
+
+// Browsers that can tell whether the page has been touched since it was loaded
+const isSoundBlockedNow = () => navigator.userActivation?.hasBeenActive === false;
 
 // The first choice takes the driver off the delivery
 const DriverDropdown = ({ order, drivers, isBusy, onChange }) => {
@@ -58,6 +107,7 @@ export const AdminOrders = ({ onUnauthorized }) => {
   const [orders, setOrders] = useState(null);
   const [drivers, setDrivers] = useState([]);
   const [error, setError, handleError] = useAdminError(onUnauthorized);
+  const [isSoundBlocked, setIsSoundBlocked] = useState(isSoundBlockedNow);
 
   const load = useCallback(async () => {
     try {
@@ -65,6 +115,11 @@ export const AdminOrders = ({ onUnauthorized }) => {
         getAdminOrders(),
         getDrivers(),
       ]);
+      const newestId = Math.max(0, ...newOrders.map((order) => order.id));
+      if (lastOrderId !== null && newestId > lastOrderId) {
+        playNewOrderSound();
+      }
+      lastOrderId = newestId;
       setOrders(newOrders);
       setDrivers(newDrivers);
       setError(null);
@@ -79,6 +134,15 @@ export const AdminOrders = ({ onUnauthorized }) => {
       load();
     } catch (assignError) {
       handleError(assignError);
+    }
+  };
+
+  const changeStatus = async (order, status) => {
+    try {
+      await setOrderStatus(order.id, status);
+      load();
+    } catch (statusError) {
+      handleError(statusError);
     }
   };
 
@@ -98,16 +162,37 @@ export const AdminOrders = ({ onUnauthorized }) => {
     return () => clearInterval(timer);
   }, [load]);
 
+  // After a reload the browser keeps the sound off until the page is touched
+  useEffect(() => {
+    if (!isSoundBlocked) {
+      return;
+    }
+    const unblock = () => setIsSoundBlocked(isSoundBlockedNow());
+    document.addEventListener("click", unblock);
+    document.addEventListener("keydown", unblock);
+    return () => {
+      document.removeEventListener("click", unblock);
+      document.removeEventListener("keydown", unblock);
+    };
+  }, [isSoundBlocked]);
+
   return (
     <div className="admin-section">
       <div className="admin-toolbar">
         <div className="admin-note">
-          Gli ordini si aggiornano da soli ogni {REFRESH_SECONDS} secondi.
+          Gli ordini si aggiornano da soli ogni {REFRESH_SECONDS} secondi; un
+          suono avvisa quando ne arriva uno nuovo.
         </div>
         <Button variant="secondary" onClick={load}>
           Aggiorna
         </Button>
       </div>
+      {isSoundBlocked && (
+        <div className="admin-error">
+          Il browser tiene il suono spento finché non tocchi la pagina: tocca
+          un punto qualsiasi per sentire l'avviso dei nuovi ordini.
+        </div>
+      )}
       {error && <div className="admin-error">{error}</div>}
       {orders === null && !error && (
         <div className="admin-note">Caricamento degli ordini...</div>
@@ -133,6 +218,9 @@ export const AdminOrders = ({ onUnauthorized }) => {
               <div className="admin-badge">
                 {orderTypeLabels[order.orderType]}
                 {order.scheduledAt && ` alle ${formatSlot(order.scheduledAt)}`}
+              </div>
+              <div className={`admin-badge admin-status-${order.status}`}>
+                {statusLabel(order.status, order.orderType)}
               </div>
               {order.customerPhone && (
                 <div className="admin-card-detail">
@@ -166,6 +254,18 @@ export const AdminOrders = ({ onUnauthorized }) => {
                 <span>Totale</span>
                 <span>{formatPrice(order.total)}</span>
               </div>
+              {nextStatus(order.status) && (
+                <Button
+                  className="admin-card-next"
+                  onClick={() => changeStatus(order, nextStatus(order.status))}
+                >
+                  Segna come{" "}
+                  {statusLabel(
+                    nextStatus(order.status),
+                    order.orderType
+                  ).toLowerCase()}
+                </Button>
+              )}
             </div>
           ))}
       </div>

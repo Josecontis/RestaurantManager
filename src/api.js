@@ -134,6 +134,13 @@ export const adminLogout = async () => {
 
 export const getAdminOrders = () => adminRequest("/api/admin/orders");
 
+// status: "nuovo", "in_preparazione", "pronto" or "completato"
+export const setOrderStatus = (orderId, status) =>
+  adminRequest(`/api/admin/orders/${orderId}/status`, {
+    method: "PUT",
+    body: { status },
+  });
+
 // driverId null takes the driver off the delivery
 export const assignDriver = (orderId, driverId) =>
   adminRequest(`/api/admin/orders/${orderId}/driver`, {

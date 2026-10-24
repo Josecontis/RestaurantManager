@@ -181,6 +181,35 @@
     margin-top: 12px;
 }
 
+.admin-badge + .admin-badge {
+    margin-left: 6px;
+}
+
+.admin-badge.admin-status-nuovo {
+    background-color: #ec7d6a;
+    color: #fff;
+}
+
+.admin-badge.admin-status-in_preparazione {
+    background-color: #f5b94226;
+    color: #f5b942;
+}
+
+.admin-badge.admin-status-pronto {
+    background-color: #4cc38a26;
+    color: #4cc38a;
+}
+
+.admin-badge.admin-status-completato {
+    background-color: #b0b5c126;
+    color: #b0b5c1;
+}
+
+.admin-card-next {
+    width: 100%;
+    margin-top: 12px;
+}
+
 .admin-hours {
     max-width: 620px;
 }

@@ -18,6 +18,7 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "http://localhost:3000")
   .map((origin) => origin.trim());
 
 const ORDER_TYPES = ["sul_posto", "ritiro", "consegna"];
+const ORDER_STATUSES = ["nuovo", "in_preparazione", "pronto", "completato"];
 const MAX_ITEMS = 50;
 const MAX_QUANTITY = 50;
 const MAX_TABLE = 999;
@@ -271,10 +272,13 @@ app.post("/api/admin/logout", requireAdmin, async (req, res) => {
   res.status(204).end();
 });
 
+// Orders still to complete first, the most urgent on top (pickup or delivery time,
+// arrival time for orders at the table); completed orders below, the latest first
 app.get("/api/admin/orders", requireAdmin, async (req, res) => {
   const { rows } = await query(
     `SELECT orders.id,
        orders.order_type AS "orderType",
+       orders.status,
        orders.table_number AS "tableNumber",
        orders.customer_name AS "customerName",
        orders.customer_phone AS "customerPhone",
@@ -292,10 +296,29 @@ app.get("/api/admin/orders", requireAdmin, async (req, res) => {
      JOIN order_items ON order_items.order_id = orders.id
      JOIN dishes ON dishes.id = order_items.dish_id
      GROUP BY orders.id
-     ORDER BY orders.created_at DESC
+     ORDER BY orders.status = 'completato',
+       CASE WHEN orders.status <> 'completato'
+         THEN COALESCE(orders.scheduled_at, orders.created_at) END,
+       COALESCE(orders.scheduled_at, orders.created_at) DESC,
+       orders.id
      LIMIT 100`
   );
   res.json(rows);
+});
+
+app.put("/api/admin/orders/:id/status", requireAdmin, async (req, res) => {
+  const id = integer(Number(req.params.id), 1, 2147483647);
+  if (!id || !ORDER_STATUSES.includes(req.body?.status)) {
+    throw new RequestError("Richiesta non valida");
+  }
+  const { rowCount } = await query(
+    "UPDATE orders SET status = $1 WHERE id = $2",
+    [req.body.status, id]
+  );
+  if (rowCount === 0) {
+    throw new RequestError("Ordine non trovato", 404);
+  }
+  res.status(204).end();
 });
 
 // A driver takes one delivery per slot
