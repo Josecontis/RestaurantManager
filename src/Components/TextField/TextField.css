@@ -18,6 +18,18 @@
     border-color: #ec7d6a;
 }
 
+.text-field--invalid,
+.text-field--invalid:focus {
+    border-color: #ff6b5a;
+}
+
+.text-field-error {
+    margin-top: 6px;
+    color: #ffb4a6;
+    font-size: 13px;
+    line-height: 18px;
+}
+
 .text-field-password {
     position: relative;
     width: 100%;

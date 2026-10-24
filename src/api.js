@@ -95,6 +95,12 @@ export const formatSlot = (time) =>
     timeZone: "Europe/Rome",
   });
 
+// Same rule as the server: Italian mobile (3xx) or landline (0xx), with or without +39
+export const isValidPhone = (value) =>
+  /^(3[0-9]{8,9}|0[0-9]{5,10})$/.test(
+    value.replace(/[\s./-]/g, "").replace(/^(\+|00)39/, "")
+  );
+
 export const sendOrder = async (order) => {
   const tablet = getTablet();
   try {

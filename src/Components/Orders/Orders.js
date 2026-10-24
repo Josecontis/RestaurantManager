@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { formatSlot, getSlots, getTablet, orderTypeCode } from "../../api";
+import { getSlots, getTablet, isValidPhone, orderTypeCode } from "../../api";
 import { Button } from "../Button/Button";
 import { TextField } from "../TextField/TextField";
 import "./Orders.css";
@@ -16,15 +16,20 @@ export const Orders = ({
   onAdd,
   onRemove,
   onConfirm,
-  onClose,
 }) => {
   const [tableNumber, setTableNumber] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
+  // The phone error appears after leaving the field or pressing "Conferma ordine"
+  const [isPhoneChecked, setIsPhoneChecked] = useState(false);
+  const phoneError =
+    isPhoneChecked && !isValidPhone(customerPhone)
+      ? "Numero non valido: scrivi un cellulare o un fisso italiano, per esempio 333 123 4567"
+      : null;
   // On small screens the order opens full screen only when asked
   const [isOpen, setIsOpen] = useState(false);
-  const isActive = foods.length !== 0 || lastOrder;
+  const isActive = foods.length !== 0;
   const count = foods.reduce((sum, el) => sum + el.quantity, 0);
   const total = foods.reduce((sum, el) => sum + el.price * el.quantity, 0);
   const typeCode = orderTypeCode(orderType);
@@ -46,6 +51,18 @@ export const Orders = ({
     }
   }, [isActive]);
 
+  // After an order is sent the next customer finds empty fields
+  useEffect(() => {
+    if (lastOrder) {
+      setTableNumber("");
+      setCustomerName("");
+      setCustomerPhone("");
+      setCustomerAddress("");
+      setIsPhoneChecked(false);
+      setScheduledAt(null);
+    }
+  }, [lastOrder]);
+
   // Free times depend on the order size; they are read again after a refused order
   useEffect(() => {
     if (!needsSlot || count === 0) {
@@ -63,6 +80,10 @@ export const Orders = ({
   }, [needsSlot, typeCode, count, error]);
 
   const confirm = () => {
+    if (typeCode !== "sul_posto" && !isValidPhone(customerPhone)) {
+      setIsPhoneChecked(true);
+      return;
+    }
     if (typeCode === "sul_posto") {
       onConfirm(tablet ? {} : { tableNumber: parseInt(tableNumber, 10) });
     } else if (typeCode === "ritiro") {
@@ -90,46 +111,7 @@ export const Orders = ({
           "orders" + (isActive ? " active" : "") + (isOpen ? " open" : "")
         }
       >
-        {foods.length === 0 && lastOrder ? (
-          <div className="orders-content">
-            <div className="orders-title">Ordine n. {lastOrder.id} inviato</div>
-            <div className="orders-subtitle">
-              {lastOrder.orderType}
-              {lastOrder.tableNumber
-                ? ` - Tavolo ${lastOrder.tableNumber}`
-                : ` - ${lastOrder.customerName}`}
-              {lastOrder.scheduledAt &&
-                ` - ore ${formatSlot(lastOrder.scheduledAt)}`}
-            </div>
-            <ul className="orders-list">
-              {lastOrder.foods.map((el) => (
-                <li key={el.id} className="orders-item">
-                  <div className="orders-item-row">
-                    <div className="orders-item-name">
-                      {el.quantity} x {el.name}
-                    </div>
-                    <div className="orders-item-price">
-                      {formatPrice(el.price * el.quantity)}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <div className="orders-total">
-              <span>Totale</span>
-              <span>{formatPrice(lastOrder.total)}</span>
-            </div>
-            <Button
-              className="orders-button"
-              onClick={() => {
-                setIsOpen(false);
-                onClose();
-              }}
-            >
-              Nuovo ordine
-            </Button>
-          </div>
-        ) : (
+        {foods.length !== 0 && (
           <div className="orders-content">
             <Button
               variant="secondary"
@@ -219,7 +201,11 @@ export const Orders = ({
                     type="tel"
                     placeholder="Telefono"
                     value={customerPhone}
+                    error={phoneError}
                     onChange={(event) => setCustomerPhone(event.target.value)}
+                    onBlur={() =>
+                      customerPhone.trim() && setIsPhoneChecked(true)
+                    }
                   />
                 </>
               )}

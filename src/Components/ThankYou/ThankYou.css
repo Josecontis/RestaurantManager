@@ -1,0 +1,169 @@
+.thank-you {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+    background-color: rgba(20, 19, 30, 0.92);
+    overflow: hidden;
+}
+
+.thank-you-fireworks {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.thank-you-burst {
+    position: absolute;
+    width: 0;
+    height: 0;
+}
+
+/* Each piece flies from the burst point to --x, --y while turning, then falls and fades */
+.thank-you-piece {
+    position: absolute;
+    left: -12px;
+    top: -12px;
+    opacity: 0;
+    animation: thank-you-fly 2.5s ease-out var(--delay) infinite;
+}
+
+@keyframes thank-you-fly {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) rotate(0) scale(0.3);
+    }
+    65% {
+        opacity: 1;
+        transform: translate(var(--x), var(--y)) rotate(var(--turn)) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(var(--x), calc(var(--y) + 60px)) rotate(var(--turn)) scale(0.9);
+    }
+}
+
+/* Pizza slice: crust on top, cheese and two slices of pepperoni */
+.thank-you-pizza {
+    width: 26px;
+    height: 30px;
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    background:
+        radial-gradient(circle at 35% 30%, #c0392b 0 3px, transparent 3.5px),
+        radial-gradient(circle at 60% 50%, #c0392b 0 3px, transparent 3.5px),
+        linear-gradient(#d9993f 0 5px, #f7d774 5px);
+}
+
+.thank-you-tomato {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ff7a6b, #d63a2a 70%);
+}
+
+.thank-you-tomato::after {
+    content: "";
+    position: absolute;
+    top: -3px;
+    left: 7px;
+    width: 8px;
+    height: 6px;
+    border-radius: 50% 50% 2px 2px;
+    background-color: #3fa34d;
+}
+
+.thank-you-salami {
+    width: 22px;
+    height: 22px;
+    border: 2px solid #7b1f1a;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 30% 35%, #f5b7b1 0 2px, transparent 2.5px),
+        radial-gradient(circle at 65% 30%, #f5b7b1 0 2px, transparent 2.5px),
+        radial-gradient(circle at 50% 70%, #f5b7b1 0 2px, transparent 2.5px),
+        #b03a2e;
+}
+
+.thank-you-mozzarella {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ffffff, #e6e0cf 75%);
+}
+
+.thank-you-card {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    padding: 35px 30px 25px;
+    border-radius: 20px;
+    background-color: #1f1d2c;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    color: #fff;
+    text-align: center;
+}
+
+.thank-you-title {
+    font-size: 30px;
+    font-weight: bolder;
+}
+
+.thank-you-number {
+    margin-top: 12px;
+    color: #ec7d6a;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.thank-you-detail {
+    margin-top: 6px;
+    color: #b0b5c1;
+    font-size: 15px;
+}
+
+.thank-you-total {
+    margin-top: 14px;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.thank-you-button {
+    width: 100%;
+    margin-top: 25px;
+    padding: 15px;
+    font-size: 16px;
+}
+
+/* Shows how long before the menu comes back by itself */
+.thank-you-timer {
+    height: 4px;
+    margin-top: 18px;
+    border-radius: 2px;
+    background-color: #2e303f;
+    overflow: hidden;
+}
+
+.thank-you-timer-bar {
+    height: 100%;
+    background-color: #ec7d6a;
+    transform-origin: left;
+    animation: thank-you-timer linear forwards;
+}
+
+@keyframes thank-you-timer {
+    from {
+        transform: scaleX(1);
+    }
+    to {
+        transform: scaleX(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .thank-you-piece {
+        display: none;
+    }
+}

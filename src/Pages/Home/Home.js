@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getMenu, orderTypeCode, sendOrder } from "../../api";
 import { Button } from "../../Components/Button/Button";
 import { Orders } from "../../Components/Orders/Orders";
 import { SearchField } from "../../Components/SearchField/SearchField";
 import { Tab, orderTypes } from "../../Components/Tab/Tab";
+import { ThankYou } from "../../Components/ThankYou/ThankYou";
 import "./Home.css";
 
 export const Home = () => {
@@ -58,6 +59,9 @@ export const Home = () => {
           ]
     );
   };
+
+  // Stable, so the thank you screen keeps its timer while the page updates
+  const closeThankYou = useCallback(() => setLastOrder(null), []);
 
   const removeFromOrder = (id) => {
     setOrderError(null);
@@ -128,9 +132,7 @@ export const Home = () => {
 
   return (
     <div
-      className={
-        orders.length !== 0 || lastOrder ? "home-page__collapsed" : "home-page"
-      }
+      className={orders.length !== 0 ? "home-page__collapsed" : "home-page"}
     >
       <div className="home-title-container">
         <div className="home-title">Wellness Pizza</div>
@@ -149,8 +151,8 @@ export const Home = () => {
         onAdd={addToOrder}
         onRemove={removeFromOrder}
         onConfirm={confirmOrder}
-        onClose={() => setLastOrder(null)}
       />
+      {lastOrder && <ThankYou order={lastOrder} onClose={closeThankYou} />}
     </div>
   );
 };

@@ -41,10 +41,15 @@ const text = (value, min, max) =>
 const integer = (value, min, max) =>
   Number.isInteger(value) && value >= min && value <= max ? value : null;
 
-const phone = (value) =>
-  typeof value === "string" && /^\+?[0-9 ]{6,20}$/.test(value.trim())
-    ? value.trim()
-    : null;
+// Italian mobile (3xx) or landline (0xx) number, with or without +39.
+// Saved as digits only, so the same number always looks the same.
+const phone = (value) => {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const digits = value.replace(/[\s./-]/g, "").replace(/^(\+|00)39/, "");
+  return /^(3[0-9]{8,9}|0[0-9]{5,10})$/.test(digits) ? digits : null;
+};
 
 // "HH:MM" in 24-hour format
 const timeOfDay = (value) =>
