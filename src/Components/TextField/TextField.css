@@ -18,6 +18,43 @@
     border-color: #ec7d6a;
 }
 
+.text-field-password {
+    position: relative;
+    width: 100%;
+}
+
+.text-field-password .text-field {
+    padding-right: 46px;
+}
+
+/* Edge has its own eye: only ours is shown */
+.text-field-password .text-field::-ms-reveal {
+    display: none;
+}
+
+.text-field-eye {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    display: flex;
+    padding: 6px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: #b0b5c1;
+    cursor: pointer;
+}
+
+.text-field-eye:hover,
+.text-field-eye:focus-visible {
+    color: #fff;
+}
+
+.text-field-eye:focus-visible {
+    outline: 2px solid #ec7d6a;
+}
+
 /* Native time pickers with light icons on the dark background */
 .text-field[type="time"] {
     color-scheme: dark;
