@@ -9,6 +9,49 @@ import { query } from "./db.js";
 
 const scrypt = promisify(scryptCallback);
 const SESSION_HOURS = 12;
+// Wrong admin passwords from the same address before the login is locked
+const LOGIN_MAX_FAILURES = 5;
+const LOGIN_LOCK_MINUTES = 15;
+
+// Kept in memory: a server restart forgets them, which is fine for a lock of minutes
+const loginFailures = new Map();
+
+const lockMs = LOGIN_LOCK_MINUTES * 60 * 1000;
+
+// Minutes the login stays locked for this address, 0 when it is free
+export const loginLockMinutes = (address) => {
+  const entry = loginFailures.get(address);
+  if (!entry) {
+    return 0;
+  }
+  const left = entry.lockedUntil - Date.now();
+  if (left > 0) {
+    return Math.ceil(left / 60000);
+  }
+  // Failures older than the lock time no longer count
+  if (Date.now() - entry.firstFailure > lockMs) {
+    loginFailures.delete(address);
+  }
+  return 0;
+};
+
+export const recordLoginFailure = (address) => {
+  const now = Date.now();
+  const entry = loginFailures.get(address) || {
+    count: 0,
+    firstFailure: now,
+    lockedUntil: 0,
+  };
+  entry.count += 1;
+  if (entry.count >= LOGIN_MAX_FAILURES) {
+    entry.lockedUntil = now + lockMs;
+    entry.count = 0;
+    entry.firstFailure = now;
+  }
+  loginFailures.set(address, entry);
+};
+
+export const clearLoginFailures = (address) => loginFailures.delete(address);
 
 // Tokens and tablet codes are long random values, so a plain SHA-256 is enough
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");

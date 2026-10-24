@@ -160,6 +160,12 @@ export const getOpeningHours = () => adminRequest("/api/admin/opening-hours");
 export const saveOpeningHours = (week) =>
   adminRequest("/api/admin/opening-hours", { method: "PUT", body: week });
 
+// { pizzasPerHour, maxDishesPerOrder, maxOrdersPerPhone }
+export const getKitchen = () => adminRequest("/api/admin/kitchen");
+
+export const saveKitchen = (kitchen) =>
+  adminRequest("/api/admin/kitchen", { method: "PUT", body: kitchen });
+
 export const getDrivers = () => adminRequest("/api/admin/drivers");
 
 export const addDriver = (name) =>

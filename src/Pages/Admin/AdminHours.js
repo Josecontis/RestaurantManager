@@ -3,6 +3,7 @@ import { getOpeningHours, saveOpeningHours } from "../../api";
 import { Button } from "../../Components/Button/Button";
 import { ListRow } from "../../Components/ListRow/ListRow";
 import { TextField } from "../../Components/TextField/TextField";
+import { AdminKitchen } from "./AdminKitchen";
 import { useAdminError } from "./useAdminError";
 
 const WEEKDAYS = [
@@ -118,6 +119,7 @@ export const AdminHours = ({ onUnauthorized }) => {
           </div>
         </form>
       )}
+      <AdminKitchen onUnauthorized={onUnauthorized} />
     </div>
   );
 };

@@ -1,16 +1,19 @@
 import cors from "cors";
 import express from "express";
 import {
+  clearLoginFailures,
   createSession,
   deleteSession,
   findTablet,
   hashSecret,
+  loginLockMinutes,
   newSecret,
+  recordLoginFailure,
   requireAdmin,
   verifyPassword,
 } from "./auth.js";
 import { query, setupDatabase, transaction } from "./db.js";
-import { MAX_DISHES_PER_SLOT, availableSlots } from "./slots.js";
+import { TIME_ZONE, availableSlots, slotCapacity } from "./slots.js";
 
 const PORT = process.env.PORT || 4000;
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "http://localhost:3000")
@@ -58,6 +61,9 @@ const timeOfDay = (value) =>
     : null;
 
 const app = express();
+// Proxies between the internet and the server (Render has some): with the right number
+// req.ip is the visitor's address, used to lock the admin login. 0 on the PC.
+app.set("trust proxy", Number(process.env.TRUST_PROXY_HOPS) || 0);
 app.use(cors({ origin: ALLOWED_ORIGINS }));
 app.use(express.json({ limit: "20kb" }));
 
@@ -101,7 +107,7 @@ app.get("/api/slots", async (req, res) => {
   }
   res.json({
     slots: await availableSlots(orderType, dishes),
-    maxDishes: MAX_DISHES_PER_SLOT,
+    maxDishes: await slotCapacity(),
   });
 });
 
@@ -182,6 +188,20 @@ const readOrder = async (req) => {
 // The total is always computed from the database prices
 app.post("/api/orders", async (req, res) => {
   const order = await readOrder(req);
+  const { rows: limits } = await query(
+    `SELECT max_dishes_per_order AS "maxDishes",
+       max_orders_per_phone AS "maxOrdersPerPhone"
+     FROM settings`
+  );
+  // A big table can always order: the limit is for pickup and delivery
+  if (
+    order.orderType !== "sul_posto" &&
+    dishCount(order.items) > limits[0].maxDishes
+  ) {
+    throw new RequestError(
+      `Puoi ordinare al massimo ${limits[0].maxDishes} pizze: per ordini più grandi chiama la pizzeria`
+    );
+  }
   const { rows: dishes } = await query(
     "SELECT id, price FROM dishes WHERE id = ANY($1::int[])",
     [order.items.map((item) => item.dishId)]
@@ -214,6 +234,21 @@ app.post("/api/orders", async (req, res) => {
         throw new RequestError(
           "L'orario scelto non è più disponibile, scegline un altro",
           409
+        );
+      }
+    }
+    if (order.customerPhone) {
+      // Orders of today, in Italian time, with the same number
+      const { rows: sameDay } = await client.query(
+        `SELECT COUNT(*)::int AS count FROM orders
+         WHERE customer_phone = $1
+           AND created_at >= date_trunc('day', now() AT TIME ZONE $2) AT TIME ZONE $2`,
+        [order.customerPhone, TIME_ZONE]
+      );
+      if (sameDay[0].count >= limits[0].maxOrdersPerPhone) {
+        throw new RequestError(
+          "Con questo numero sono già stati fatti troppi ordini oggi: per altri ordini chiama la pizzeria",
+          429
         );
       }
     }
@@ -253,6 +288,13 @@ app.post("/api/orders", async (req, res) => {
 });
 
 app.post("/api/admin/login", async (req, res) => {
+  const lockMinutes = loginLockMinutes(req.ip);
+  if (lockMinutes > 0) {
+    throw new RequestError(
+      `Troppe password sbagliate: riprova tra ${lockMinutes} minuti`,
+      429
+    );
+  }
   const username = text(req.body?.username, 1, 100);
   const password =
     typeof req.body?.password === "string" ? req.body.password : "";
@@ -266,8 +308,10 @@ app.post("/api/admin/login", async (req, res) => {
     rows.length === 0 ||
     !(await verifyPassword(password, rows[0].password_hash))
   ) {
+    recordLoginFailure(req.ip);
     throw new RequestError("Nome utente o password errati", 401);
   }
+  clearLoginFailures(req.ip);
   const token = await createSession(rows[0].id);
   res.json({ token, username: rows[0].username });
 });
@@ -415,6 +459,41 @@ app.put("/api/admin/opening-hours", requireAdmin, async (req, res) => {
     }
   });
   res.json(await openingHours());
+});
+
+const kitchenSettings = async () => {
+  const { rows } = await query(
+    `SELECT pizzas_per_hour AS "pizzasPerHour",
+       max_dishes_per_order AS "maxDishesPerOrder",
+       max_orders_per_phone AS "maxOrdersPerPhone"
+     FROM settings`
+  );
+  return rows[0];
+};
+
+app.get("/api/admin/kitchen", requireAdmin, async (req, res) => {
+  res.json(await kitchenSettings());
+});
+
+app.put("/api/admin/kitchen", requireAdmin, async (req, res) => {
+  const pizzasPerHour = integer(req.body?.pizzasPerHour, 4, 400);
+  const maxDishesPerOrder = integer(req.body?.maxDishesPerOrder, 1, 100);
+  const maxOrdersPerPhone = integer(req.body?.maxOrdersPerPhone, 1, 50);
+  if (!pizzasPerHour) {
+    throw new RequestError("Le pizze all'ora vanno da 4 a 400");
+  }
+  if (!maxDishesPerOrder) {
+    throw new RequestError("Le pizze per ordine vanno da 1 a 100");
+  }
+  if (!maxOrdersPerPhone) {
+    throw new RequestError("Gli ordini al giorno per telefono vanno da 1 a 50");
+  }
+  await query(
+    `UPDATE settings SET pizzas_per_hour = $1, max_dishes_per_order = $2,
+       max_orders_per_phone = $3`,
+    [pizzasPerHour, maxDishesPerOrder, maxOrdersPerPhone]
+  );
+  res.json(await kitchenSettings());
 });
 
 app.get("/api/admin/drivers", requireAdmin, async (req, res) => {

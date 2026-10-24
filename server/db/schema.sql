@@ -82,3 +82,16 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
   admin_id INTEGER NOT NULL REFERENCES admins (id) ON DELETE CASCADE,
   expires_at TIMESTAMPTZ NOT NULL
 );
+
+-- Restaurant settings changed from the admin area, always one row
+CREATE TABLE IF NOT EXISTS settings (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  -- Kitchen capacity: a quarter of it in each 15 minute slot
+  pizzas_per_hour INTEGER NOT NULL DEFAULT 24 CHECK (pizzas_per_hour BETWEEN 4 AND 400),
+  -- Pickup and delivery only: a big table can always order
+  max_dishes_per_order INTEGER NOT NULL DEFAULT 10 CHECK (max_dishes_per_order BETWEEN 1 AND 100),
+  -- Pickup and delivery orders a phone number can place in one day
+  max_orders_per_phone INTEGER NOT NULL DEFAULT 3 CHECK (max_orders_per_phone BETWEEN 1 AND 50)
+);
+
+INSERT INTO settings (id) VALUES (1) ON CONFLICT DO NOTHING;

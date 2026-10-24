@@ -236,6 +236,18 @@
     width: 120px;
 }
 
+.admin-kitchen {
+    max-width: 620px;
+}
+
+.admin-kitchen .list-row-actions {
+    flex-shrink: 0;
+}
+
+.admin-kitchen .admin-kitchen-number {
+    width: 100px;
+}
+
 @media (max-width: 768px) {
     .admin-page {
         margin-left: 0;
