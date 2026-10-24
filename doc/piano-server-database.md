@@ -1,6 +1,6 @@
 # RestaurantManager: server, database, tavoli e area admin
 
-Data: 22/10/2026 · Stato: fasi 1, 3, 4, 5, 6, 8, 9 fatte e provate in locale; fasi 2 e 7 (account e messa online) da fare insieme
+Data: 22/10/2026, aggiornato il 24/10/2026 · Stato: fasi 1, 3, 4, 5, 6, 8, 9, 10 fatte e provate in locale; fasi 2 e 7 (account e messa online) da fare insieme
 
 ## Contesto
 
@@ -65,8 +65,8 @@ sequenceDiagram
   S-->>P: numero ordine e totale
   P-->>C: "Ordine n. 12 inviato"
   A->>S: scheda "Ordini" dell'area admin, aggiornata ogni 30 secondi
-  S->>D: legge gli ultimi 100 ordini, i più recenti per primi
-  S-->>A: tavolo o cliente, tipo, ora, piatti e totale
+  S->>D: legge 100 ordini: prima quelli da completare, i più urgenti in alto
+  S-->>A: tavolo o cliente, tipo, ora, stato, piatti e totale
 ```
 
 | Tipo di ordine | Dati richiesti al cliente |
@@ -121,7 +121,7 @@ sequenceDiagram
 
 | Scheda | Cosa fa | File |
 |---|---|---|
-| Ordini | ultimi 100 ordini, aggiornati ogni 30 secondi; sulle consegne una tendina per scegliere il driver | `src/Pages/Admin/AdminOrders.js` |
+| Ordini | 100 ordini, aggiornati ogni 30 secondi, in fila per urgenza; stato di ogni ordine con il pulsante per il passo successivo; suono quando arriva un ordine nuovo; sulle consegne una tendina per scegliere il driver | `src/Pages/Admin/AdminOrders.js` |
 | Driver | aggiunge e rimuove driver, li mette o toglie dal servizio, mostra quanti sono in servizio | `src/Pages/Admin/AdminDrivers.js` |
 | Orari | per ogni giorno: aperto o chiuso, prima e ultima fascia; si salva tutta la settimana insieme | `src/Pages/Admin/AdminHours.js` |
 | Tablet | registra questo dispositivo su un tavolo, elenca e rimuove i tablet | `src/Pages/Admin/AdminTablets.js` |
@@ -151,6 +151,65 @@ sequenceDiagram
 - Gli orari sono controllati dal server: ore valide e ultima fascia non prima della prima (`server/index.js:355-390`).
 - Togliere un driver dal servizio non cambia le consegne già prenotate: diminuiscono solo i posti delle fasce ancora libere.
 
+## Stati dell'ordine
+
+Aggiunti il 24/10/2026: la cucina vede a che punto è ogni ordine e lavora per orario, non per ora di arrivo.
+
+| Stato | Colore sulla card | Pulsante sulla card |
+|---|---|---|
+| Nuovo | corallo pieno | "Segna come in preparazione" |
+| In preparazione | giallo | "Segna come pronto" |
+| Pronto | verde | "Segna come servito", "ritirato" o "consegnato" |
+| Servito (sul posto), Ritirato (ritiro), Consegnato (consegna) | grigio | nessuno: l'ordine è completato |
+
+```mermaid
+sequenceDiagram
+  actor C as Cliente
+  participant S as Server Express
+  participant D as Database Neon
+  participant P as Scheda Ordini
+  actor A as Admin
+  C->>S: nuovo ordine
+  S->>D: salva l'ordine con stato "Nuovo"
+  P->>S: aggiornamento automatico ogni 30 secondi
+  S-->>P: c'è un numero d'ordine più alto di prima
+  P-->>A: suono di avviso (due note)
+  A->>P: "Segna come in preparazione"
+  P->>S: PUT /api/admin/orders/12/status
+  S->>D: salva lo stato
+  S-->>P: elenco aggiornato
+```
+
+| Regola | Dettaglio |
+|---|---|
+| Ordine della lista | prima gli ordini da completare, dal più urgente: orario di ritiro o consegna, oppure ora di arrivo per gli ordini al tavolo; sotto i completati, i più recenti per primi (`server/index.js:299-304`) |
+| Cambio di stato | un tocco sul pulsante porta al passo successivo (`src/Pages/Admin/AdminOrders.js:257-268`); non si torna indietro dall'app (scelta del 24/10/2026: più rapido in cucina) |
+| Stati validi | solo i 4 dell'elenco, controllati dal server (`server/index.js:21`, `server/index.js:309-322`) e dal database |
+| Suono | due note generate dal browser, senza file audio (`src/Pages/Admin/AdminOrders.js:53-69`); suona quando compare un numero d'ordine più alto dell'ultimo visto (`src/Pages/Admin/AdminOrders.js:117-122`); l'ultimo numero visto resta ricordato anche cambiando pagina (`src/Pages/Admin/AdminOrders.js:71-73`) |
+| Avviso "suono spento" | se il browser blocca il suono compare una riga che chiede di toccare la pagina; sparisce al primo tocco (`src/Pages/Admin/AdminOrders.js:165-177`, `src/Pages/Admin/AdminOrders.js:190-195`) |
+
+- **Il suono non è immediato**: arriva con l'aggiornamento automatico, quindi fino a 30 secondi dopo l'ordine (subito se si preme "Aggiorna").
+- **Il suono richiede un tocco**: i browser suonano solo dopo che la persona ha toccato la pagina. Dopo il login va bene; se si ricarica la pagina restando collegati compare l'avviso "Il browser tiene il suono spento..." finché non si tocca un punto qualsiasi. L'avviso si basa su una funzione che Chrome, Edge e Safari hanno; su un browser che non ce l'ha l'avviso non compare, ma la regola del tocco resta.
+- **Solo nella scheda Ordini**: nelle schede Driver, Orari e Tablet e nella pagina del menu il suono non c'è; tornando su Ordini, se nel frattempo sono arrivati ordini nuovi, il suono parte subito (corretto il 24/10/2026: prima restava muto).
+- **Scheda del browser in secondo piano**: Chrome rallenta gli aggiornamenti delle schede nascoste da alcuni minuti, quindi il suono può arrivare fino a circa un minuto dopo.
+- **Errori di stato**: se si tocca il pulsante per sbaglio non c'è "indietro"; per correggere serve l'editor SQL di Neon (`UPDATE orders SET status = 'nuovo' WHERE id = 12`).
+- **Ordini vecchi non completati** restano in cima alla lista finché qualcuno non li completa, perché sono i "più urgenti".
+- **Fasce orarie**: un ordine completato continua a contare nei posti della sua fascia (forno e driver), perché quella fascia l'ha comunque occupata.
+- Se ci fossero più di 100 ordini da completare, i completati non comparirebbero: per una pizzeria in una sera non succede.
+- Lo stato si cambia anche da due dispositivi admin insieme: vince l'ultimo tocco, e l'altro dispositivo lo vede al suo aggiornamento successivo.
+
+| File | Tipo | Complessità | Cosa cambia |
+|---|---|---|---|
+| `server/db/schema.sql` | modifica (3 righe) | bassa | colonna `status` sugli ordini (`server/db/schema.sql:62-64`) |
+| `server/index.js` | modifica | media | stato nell'elenco ordini, nuovo ordine della lista, nuovo servizio per cambiare lo stato |
+| `src/api.js` | modifica | bassa | chiamata `setOrderStatus` (`src/api.js:137-142`) |
+| `src/Pages/Admin/AdminOrders.js` | modifica | media | stato sulla card, pulsante, suono, avviso "suono spento", frase in alto |
+| `src/Pages/Admin/Admin.css` | modifica | bassa | colori degli stati e pulsante a tutta larghezza (`src/Pages/Admin/Admin.css:184-211`) |
+
+Riusa `Button` per il pulsante e lo stile `admin-badge` per lo stato. Tocca le API (un servizio nuovo, uno con un campo in più) e lo schema del database; non tocca variabili d'ambiente, deploy o test.
+
+Prove del 24/10/2026 con un database di prova: ordini dei tre tipi, ogni passo di stato fino a Servito, Ritirato e Consegnato, lista nell'ordine giusto, stato inesistente, ordine inesistente e richiesta senza login rifiutati; suono solo per un ordine nuovo (non al primo caricamento, non con "Aggiorna" senza novità, non dopo un cambio di stato); con le regole normali di Chrome sui suoni: suona dopo il login, suona tornando dalla pagina del menu se nel frattempo è arrivato un ordine, dopo un ricaricamento resta spento e mostra l'avviso, dopo un tocco suona di nuovo; confermato anche dalla prova dell'utente; database senza la colonna che la riceve al riavvio del server con gli ordini in stato "Nuovo"; schermate su PC e smartphone, nessun errore in console.
+
 ## Componenti riusabili
 
 Regola dal 22/10/2026: se una schermata ha bisogno di un elemento che esiste già si usa lo stesso componente; se gli manca qualcosa gli si aggiunge un'opzione facoltativa, senza cambiare chi lo usa già.
@@ -158,7 +217,7 @@ Regola dal 22/10/2026: se una schermata ha bisogno di un elemento che esiste gi�
 | Componente | Cosa fa | Opzioni | Dove si usa |
 |---|---|---|---|
 | `Button` (`src/Components/Button/Button.js`) | pulsante | `variant`: "primary" (corallo) o "secondary" (scuro con bordo grigio); `className` per spazi e dimensioni decisi dalla pagina | carrello ("Conferma ordine", "Nuovo ordine", "Torna al menu"), "Riprova" del menu, tutte le schede admin |
-| `TextField` (`src/Components/TextField/TextField.js`) | campo per testo, numero, telefono, password, orario | le stesse di un campo normale (`type`, `placeholder`, `value`...) | carrello (tavolo, nome, telefono, indirizzo), login admin, Driver, Orari, Tablet |
+| `TextField` (`src/Components/TextField/TextField.js`) | campo per testo, numero, telefono, password, orario | le stesse di un campo normale (`type`, `placeholder`, `value`...); con `type="password"` compare da solo un occhio che mostra o nasconde la password (dal 24/10/2026) | carrello (tavolo, nome, telefono, indirizzo), login admin, Driver, Orari, Tablet |
 | `DropdownField` (`src/Components/DropdownField/DropdownField.js:6-13`) | tendina | `selectedIndex`: voce mostrata decisa da fuori; `disabledIndexes`: voci grigie non selezionabili; la larghezza la decide la pagina che la usa | tipo di ordine nel menu, driver sulle consegne |
 | `ListRow` (`src/Components/ListRow/ListRow.js`) | riga di un elenco: titolo e nota a sinistra, pulsanti o campi a destra | `title`, `note`, contenuto a destra | schede Driver, Orari, Tablet |
 | `useAdminError` (`src/Pages/Admin/useAdminError.js`) | messaggio d'errore delle schede admin; con la sessione scaduta torna al login | | schede Ordini, Driver, Orari, Tablet |
@@ -166,6 +225,7 @@ Regola dal 22/10/2026: se una schermata ha bisogno di un elemento che esiste gi�
 - Restano con uno stile proprio perché non sono pulsanti normali: la barra "Vedi ordine" su smartphone, i pulsanti +/- delle quantità, le fasce orarie del carrello, "Aggiungi" della card (fa parte della card cliccabile) e il campo di ricerca (ha l'icona e un suo stile).
 - Cambi visibili: il testo dei campi del carrello passa da 14 a 15 px e il pulsante "Riprova" prende lo stile comune (un po' più stretto, con l'ombra). Il resto è uguale: confrontate le schermate prima e dopo su PC e smartphone.
 - Prove del 22/10/2026 su PC e smartphone: ordine di ritiro completo, ordine al tavolo con e senza numero, "Torna al menu", login errato e giusto, driver assegnato e tolto dalla tendina, driver aggiunto, tolto dal servizio e rimosso, giorno chiuso e riaperto, tablet registrato e annullato, sessione scaduta che riporta al login. Nessun avviso in console.
+- **Occhio sul campo password** (24/10/2026): ogni campo password ha a destra un occhio; toccandolo la password diventa leggibile e l'icona diventa un occhio sbarrato, toccandolo di nuovo torna nascosta (`src/Components/TextField/TextField.js:9-40`, stile in `src/Components/TextField/TextField.css:21-56`). Le due icone sono disegnate in SVG (`src/Components/Assets/EyeIcon.js`, `src/Components/Assets/EyeOffIcon.js`) perché il font di icone del progetto non ha l'occhio. Su Edge l'occhio del browser viene nascosto, così non ne compaiono due. Oggi l'unico campo password è quello del login admin. Provato il 24/10/2026 su smartphone: mostra, nasconde, la password scritta resta uguale.
 
 ## Dati salvati
 
@@ -219,6 +279,7 @@ erDiagram
     text customer_address "solo consegna"
     timestamp scheduled_at "orario di ritiro o consegna"
     int driver_id FK "solo consegna, scelto dall'admin"
+    text status "nuovo, in_preparazione, pronto, completato"
     numeric total
     timestamp created_at
   }
@@ -255,7 +316,8 @@ erDiagram
 | `GET /api/slots?type=ritiro&dishes=2` | fasce orarie ancora libere per quel tipo e quel numero di pizze | tutti |
 | `POST /api/orders` | salva un ordine e restituisce numero e totale | tutti |
 | `POST /api/admin/login` e `/logout` | entrata e uscita admin | admin |
-| `GET /api/admin/orders` | ultimi 100 ordini con tavolo o cliente, tipo, ora, driver, piatti, totale | admin |
+| `GET /api/admin/orders` | 100 ordini, prima quelli da completare, con tavolo o cliente, tipo, ora, stato, driver, piatti, totale | admin |
+| `PUT /api/admin/orders/:id/status` | cambia lo stato di un ordine | admin |
 | `PUT /api/admin/orders/:id/driver` | assegna o toglie il driver di una consegna | admin |
 | `GET` / `PUT /api/admin/opening-hours` | legge e salva gli orari dei 7 giorni | admin |
 | `GET` / `POST` / `PATCH` / `DELETE /api/admin/drivers` | elenca, aggiunge, mette in servizio o toglie, rimuove driver | admin |
@@ -276,6 +338,7 @@ Rispetto al piano iniziale `GET /api/categories` e `GET /api/dishes` sono divent
 | 7. Online | server su Render, app su GitHub Pages | **da fare insieme**: file pronti, servono gli account |
 | 8. Sottosezioni admin | schede Driver e Orari, driver sulle consegne, fasce calcolate da orari e driver in servizio | fatta |
 | 9. Componenti riusabili | pulsante, campo di testo, tendina e riga comuni a menu cliente e admin | fatta |
+| 10. Stati dell'ordine | stato con pulsante sulla card, lista per urgenza, suono per gli ordini nuovi | fatta il 24/10/2026, vedi "Stati dell'ordine" |
 
 Prove fatte il 22/10/2026 su PC (1440x900), smartphone (390x844), tablet verticale (820x1180) e orizzontale (1180x820): ordine al tavolo scritto a mano, consegna, errore senza tavolo, login sbagliato e giusto, registrazione tablet, ordine con tavolo automatico, ordine visto dall'admin. Le API sono state provate anche con dati sbagliati (tavolo mancante, telefono non valido, piatto inesistente, codice tablet falso, CORS da un sito non autorizzato).
 
@@ -340,12 +403,12 @@ La versione di Node su Render è fissata a 22 dal campo `engines` di `server/pac
 - **Server pubblico**: chiunque conosca l'indirizzo può inviare ordini "sul posto" scrivendo un tavolo qualsiasi. Per una prova è accettabile; non c'è un limite di tentativi sul login admin.
 - **Avvisi già presenti**: variabili non usate in `Modal.js` e `Sidebar.js`. La pubblicazione usa `CI: false`, altrimenti si fermerebbe. L'avviso della `key` mancante nella tendina è stato corretto il 22/10/2026.
 - **Limiti gratuiti**: Neon 1 GB, Render 750 ore al mese; Render dichiara che il piano gratuito non è per la produzione. Offerte verificate il 22/10/2026.
-- **Fuori da questo lavoro**: foto dei piatti, gestione del menu dall'area admin, stati dell'ordine (nuovo, in preparazione, servito), icone del menu laterale sempre bianche, date speciali di chiusura (ferie, festivi), accesso dei driver dal loro telefono, capienza del forno modificabile dall'admin. Quelli da fare sono nella sezione "Prossimi passi".
+- **Fuori da questo lavoro**: foto dei piatti, gestione del menu dall'area admin, icone del menu laterale sempre bianche, date speciali di chiusura (ferie, festivi), accesso dei driver dal loro telefono, capienza del forno modificabile dall'admin. Quelli da fare sono nella sezione "Prossimi passi".
 - **Database già esistente**: la colonna `driver_id` è dentro la creazione della tabella `orders`, quindi un database creato prima di questa fase non la riceve da solo. Su Neon non c'è ancora nessun database, quindi oggi non serve niente; il database di prova sul PC l'ho aggiornato a mano.
 
 ## Prossimi passi
 
-Cose da fare prossimamente, nell'ordine suggerito. Al 22/10/2026 nessuna è iniziata.
+Cose da fare prossimamente, nell'ordine suggerito. Al 24/10/2026 è fatto il punto 6.
 
 ### Da completare
 
@@ -356,7 +419,7 @@ Cose da fare prossimamente, nell'ordine suggerito. Al 22/10/2026 nessuna è iniz
 | 3 | Componenti riusabili: sistemare la tendina | **fatto il 22/10/2026** | |
 | 4 | Componenti riusabili nell'admin | **fatto il 22/10/2026** | |
 | 5 | **Gestione del menu dall'admin** | oggi pizze, prezzi, ingredienti e foto si cambiano solo con comandi SQL | serve decidere dove salvare le foto gratis; gli ingredienti servono anche al chatbot (idea A) |
-| 6 | **Stati dell'ordine** (nuovo, in preparazione, pronto, consegnato), **avviso sonoro** per un ordine nuovo, **ordini ordinati per orario** di ritiro o consegna | oggi l'elenco si allunga e basta, e la cucina lavora per orario, non per ora di arrivo | |
+| 6 | **Stati dell'ordine**, **avviso sonoro** per un ordine nuovo, **ordini ordinati per orario** | **fatto il 24/10/2026**, vedi "Stati dell'ordine" | |
 | 7 | **Orari: date speciali di chiusura** (ferie, festivi) e **capienza del forno e preavviso** modificabili dall'admin | oggi solo giorni della settimana; forno e preavviso sono nel codice (`server/slots.js:3-9`) | |
 | 8 | **Consegna: zona servita, costo di consegna, ordine minimo** | oggi si accetta qualunque indirizzo, gratis e senza minimo | |
 | 9 | **Piccole cose**: limite ai tentativi di login admin, test automatico che fallisce già (`src/App.test.js:4-8`), avvisi React in `Modal.js` e `Sidebar.js` | ordine e sicurezza | per un progetto di prova possono aspettare |
