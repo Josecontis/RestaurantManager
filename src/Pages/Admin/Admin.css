@@ -45,7 +45,7 @@
     margin: 15px 0;
     padding: 10px 12px;
     border-radius: 8px;
-    background-color: #ec7d6a26;
+    background-color: var(--accent-soft);
     color: #ffb4a6;
     font-size: 14px;
 }
@@ -86,7 +86,7 @@
 }
 
 .admin-card-number {
-    color: #ec7d6a;
+    color: var(--accent);
 }
 
 .admin-card-main {
@@ -100,8 +100,8 @@
     margin: 8px 0 4px;
     padding: 4px 10px;
     border-radius: 6px;
-    background-color: #ec7d6a26;
-    color: #ec7d6a;
+    background-color: var(--accent-soft);
+    color: var(--accent);
     font-size: 13px;
     font-weight: 600;
 }
@@ -186,7 +186,7 @@
 }
 
 .admin-badge.admin-status-nuovo {
-    background-color: #ec7d6a;
+    background-color: var(--accent);
     color: #fff;
 }
 
@@ -228,7 +228,7 @@
 .admin-check input {
     width: 20px;
     height: 20px;
-    accent-color: #ec7d6a;
+    accent-color: var(--accent);
     cursor: pointer;
 }
 
@@ -246,6 +246,63 @@
 
 .admin-kitchen .admin-kitchen-number {
     width: 100px;
+}
+
+.admin-brand {
+    max-width: 720px;
+}
+
+.admin-brand .list-row-actions {
+    flex-shrink: 0;
+}
+
+.admin-brand .admin-brand-name {
+    width: 260px;
+}
+
+.admin-colors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-color {
+    width: 34px;
+    height: 34px;
+    border: 3px solid transparent;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.admin-color.selected {
+    border-color: #fff;
+}
+
+.admin-brand-logo {
+    display: block;
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    object-fit: contain;
+    background-color: #2e303f;
+}
+
+.admin-photo-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.admin-photo {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.admin-photo--empty {
+    display: inline-block;
+    border: 2px dashed #525252;
 }
 
 /* Own stacking context: the map layers stay under the menu and the suggestions */

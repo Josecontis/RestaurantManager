@@ -1,3 +1,11 @@
+/* Main color of the restaurant: replaced by the one chosen in the admin area (src/brand.js) */
+:root {
+  --accent: #ec7d6a;
+  --accent-soft: #ec7d6a26;
+  --accent-faint: #ec7d6a33;
+  --accent-glow: #ec7d6a71;
+}
+
 * {
   margin: 0;
   padding: 0;

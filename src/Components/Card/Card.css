@@ -46,6 +46,13 @@
         radial-gradient(circle closest-side, #f3c76a 0 62%, #d9472b 64% 74%, #e8a659 76% 92%, #c9803a 96%);
 }
 
+.card-photo {
+    display: block;
+    object-fit: cover;
+    background: #2e303f;
+    cursor: zoom-in;
+}
+
 .card-title {
     margin-top: 100px;
     text-align: center;
@@ -82,8 +89,8 @@
     width: fit-content;
     padding: 8px 22px;
     border-radius: 8px;
-    background-color: #ec7d6a;
-    box-shadow: 0px 0px 25px -9px #ec7d6a;
+    background-color: var(--accent);
+    box-shadow: 0px 0px 25px -9px var(--accent);
     color: #fff;
     font-size: 14px;
     font-weight: 600;

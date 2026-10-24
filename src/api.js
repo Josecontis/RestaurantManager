@@ -33,6 +33,13 @@ const writeStorage = (key, value) => {
 // { id, tableNumber, code } of this device, when an admin registered it
 export const getTablet = () => readStorage(TABLET_KEY);
 
+// Last name, color and logo seen, so the next visit starts with them
+const BRAND_KEY = "restaurantManager.brand";
+
+export const getSavedBrand = () => readStorage(BRAND_KEY);
+
+export const rememberBrand = (brand) => writeStorage(BRAND_KEY, brand);
+
 // { token, username } of the admin logged in on this device
 export const getAdmin = () => readStorage(ADMIN_KEY);
 
@@ -43,13 +50,17 @@ class ApiError extends Error {
   }
 }
 
+// body is sent as JSON, or as it is when it is a file (Blob)
 const request = async (path, { method = "GET", body, headers = {} } = {}) => {
+  const isFile = body instanceof Blob;
   let response;
   try {
     response = await fetch(API_URL + path, {
       method,
-      headers: body ? { "Content-Type": "application/json", ...headers } : headers,
-      body: body ? JSON.stringify(body) : undefined,
+      headers: body
+        ? { "Content-Type": isFile ? body.type : "application/json", ...headers }
+        : headers,
+      body: body && !isFile ? JSON.stringify(body) : body,
     });
   } catch {
     throw new ApiError("Server non raggiungibile, riprova tra poco", 0);
@@ -82,6 +93,12 @@ const adminRequest = async (path, options = {}) => {
 };
 
 export const getMenu = () => request("/api/menu");
+
+// { name, accentColor, logoUrl } of the restaurant
+export const getBrand = () => request("/api/settings");
+
+// The server gives image addresses without its own domain
+export const imageSrc = (path) => (path ? API_URL + path : null);
 
 // { slots: [{ time, label }], maxDishes } for pickup or delivery
 export const getSlots = (orderType, dishes) =>
@@ -225,6 +242,16 @@ export const getOpeningHours = () => adminRequest("/api/admin/opening-hours");
 
 export const saveOpeningHours = (week) =>
   adminRequest("/api/admin/opening-hours", { method: "PUT", body: week });
+
+export const saveBrand = (brand) =>
+  adminRequest("/api/admin/brand", { method: "PUT", body: brand });
+
+// key: "logo" or "dish-<id>"; image: a Blob already made smaller
+export const uploadImage = (key, image) =>
+  adminRequest(`/api/admin/images/${key}`, { method: "PUT", body: image });
+
+export const removeImage = (key) =>
+  adminRequest(`/api/admin/images/${key}`, { method: "DELETE" });
 
 // { pizzeriaAddress, pizzeriaLat, pizzeriaLon, radiusKm, minOrder, fees }
 export const getAdminDelivery = () => adminRequest("/api/admin/delivery");

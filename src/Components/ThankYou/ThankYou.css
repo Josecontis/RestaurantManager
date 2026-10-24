@@ -113,7 +113,7 @@
 
 .thank-you-number {
     margin-top: 12px;
-    color: #ec7d6a;
+    color: var(--accent);
     font-size: 18px;
     font-weight: 600;
 }
@@ -148,7 +148,7 @@
 
 .thank-you-timer-bar {
     height: 100%;
-    background-color: #ec7d6a;
+    background-color: var(--accent);
     transform-origin: left;
     animation: thank-you-timer linear forwards;
 }

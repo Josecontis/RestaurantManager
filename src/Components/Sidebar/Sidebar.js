@@ -9,8 +9,8 @@ export const Sidebar = () => {
   const isActive = location.pathname.split("/")[1] || "Orders";
   const navigate = useNavigate();
   const IconList = [
-    <ClocheIcon size={24} color={isActive ? "#ffffff" : "#eb7c68"} />,
-    <SettingsIcon size={24} color={isActive ? "#ffffff" : "#eb7c68"} />,
+    <ClocheIcon size={24} color={isActive ? "#ffffff" : "var(--accent)"} />,
+    <SettingsIcon size={24} color={isActive ? "#ffffff" : "var(--accent)"} />,
   ];
   const menuList = ["Orders", "Admin"];
   return (

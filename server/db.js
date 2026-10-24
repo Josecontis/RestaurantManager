@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import pg from "pg";
+import { loadStarterPhotos } from "./images.js";
 
 // Neon connection strings already contain sslmode=require
 export const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
@@ -27,11 +28,14 @@ export const transaction = async (callback) => {
 const readSql = (name) =>
   readFile(new URL(`./db/${name}`, import.meta.url), "utf8");
 
-// Creates the missing tables and loads the initial menu on an empty database
+// Creates the missing tables and loads the initial menu, with its photos, on an empty database
 export const setupDatabase = async () => {
   await pool.query(await readSql("schema.sql"));
   const { rows } = await pool.query("SELECT COUNT(*)::int AS count FROM categories");
   if (rows[0].count === 0) {
-    await transaction(async (client) => client.query(await readSql("seed.sql")));
+    await transaction(async (client) => {
+      await client.query(await readSql("seed.sql"));
+      await loadStarterPhotos(client);
+    });
   }
 };

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --env-file-if-exists=.env --watch index.js",
-    "create-admin": "node --env-file-if-exists=.env scripts/create-admin.js"
+    "create-admin": "node --env-file-if-exists=.env scripts/create-admin.js",
+    "load-photos": "node --env-file-if-exists=.env scripts/load-photos.js"
   },
   "engines": {
     "node": "22.x"

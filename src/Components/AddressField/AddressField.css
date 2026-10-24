@@ -28,7 +28,7 @@
 
 .address-field-option:hover,
 .address-field-option.active {
-    background-color: #ec7d6a33;
+    background-color: var(--accent-faint);
 }
 
 .address-field-empty {

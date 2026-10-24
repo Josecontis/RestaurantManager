@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { adminLogout, getAdmin } from "../../api";
 import { Button } from "../../Components/Button/Button";
+import { AdminBrand } from "./AdminBrand";
 import { AdminDeliveries } from "./AdminDeliveries";
 import { AdminDrivers } from "./AdminDrivers";
 import { AdminHours } from "./AdminHours";
@@ -15,6 +16,7 @@ const sections = [
   { label: "Driver", component: AdminDrivers },
   { label: "Orari", component: AdminHours },
   { label: "Tablet", component: AdminTablets },
+  { label: "Ristorante", component: AdminBrand },
 ];
 
 export const Admin = () => {

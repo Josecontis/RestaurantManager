@@ -4,11 +4,19 @@ import "leaflet/dist/leaflet.css";
 
 // Same colors as the status badges of the orders
 export const STATUS_COLORS = {
-  nuovo: "#ec7d6a",
+  nuovo: "var(--accent)",
   in_preparazione: "#f5b942",
   pronto: "#4cc38a",
   completato: "#b0b5c1",
 };
+
+// The map draws with SVG attributes, which do not understand CSS variables
+const resolveColor = (color) =>
+  color.startsWith("var(")
+    ? getComputedStyle(document.documentElement)
+        .getPropertyValue(color.slice(4, -1))
+        .trim()
+    : color;
 
 // Popup text built as plain text: names and addresses are written by customers
 const popupContent = (delivery) => {
@@ -59,7 +67,7 @@ export const DeliveryMap = ({ center, radiusKm, deliveries }) => {
     }
     L.circle([lat, lon], {
       radius: radiusKm * 1000,
-      color: "#ec7d6a",
+      color: resolveColor("var(--accent)"),
       weight: 2,
       fillOpacity: 0.06,
     }).addTo(zoneLayer.current);
@@ -84,7 +92,7 @@ export const DeliveryMap = ({ center, radiusKm, deliveries }) => {
         radius: 9,
         color: "#1f1d2c",
         weight: 2,
-        fillColor: STATUS_COLORS[delivery.status],
+        fillColor: resolveColor(STATUS_COLORS[delivery.status]),
         fillOpacity: 1,
       })
         .bindPopup(popupContent(delivery))

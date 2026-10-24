@@ -106,8 +106,8 @@
 .navigation ul li.active .button .icon-list {
     min-width: 50px;
     height: 50px;
-    background-color: #ec7d6a;
-    box-shadow: 0px 0px 25px -9px #ec7d6a;
+    background-color: var(--accent);
+    box-shadow: 0px 0px 25px -9px var(--accent);
     border-radius: 8px;
     display: flex;
     justify-content: center;
@@ -125,7 +125,7 @@
 
 .navigation ul li .button .title {
     display: flex;
-    color: #ec7d6a;
+    color: var(--accent);
     padding-left: 26px;
     font-weight: 600;
     height: 60px;
@@ -146,7 +146,7 @@
 
 .toggle.active {
 
-    color: #ec7d6a;
+    color: var(--accent);
 }
 
 /* On small screens the menu becomes a bar at the bottom */

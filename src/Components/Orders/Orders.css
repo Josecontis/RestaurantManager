@@ -109,8 +109,8 @@
 .navigation ul li.active .button .icon-list {
     min-width: 50px;
     height: 50px;
-    background-color: #ec7d6a;
-    box-shadow: 0px 0px 25px -9px #ec7d6a;
+    background-color: var(--accent);
+    box-shadow: 0px 0px 25px -9px var(--accent);
     border-radius: 8px;
     display: flex;
     justify-content: center;
@@ -128,7 +128,7 @@
 
 .navigation ul li .button .title {
     display: flex;
-    color: #ec7d6a;
+    color: var(--accent);
     padding-left: 26px;
     font-weight: 600;
     height: 60px;
@@ -149,7 +149,7 @@
 
 .toggle.active {
 
-    color: #ec7d6a;
+    color: var(--accent);
 }
 
 .orders-content {
@@ -168,7 +168,7 @@
 
 .orders-subtitle {
     margin-top: 5px;
-    color: #ec7d6a;
+    color: var(--accent);
     font-size: 14px;
     font-weight: 600;
 }
@@ -225,7 +225,7 @@
 }
 
 .orders-quantity button:hover {
-    border-color: #ec7d6a;
+    border-color: var(--accent);
 }
 
 .orders-total {
@@ -255,7 +255,7 @@
     margin-bottom: 15px;
     padding: 10px 12px;
     border-radius: 8px;
-    background-color: #ec7d6a26;
+    background-color: var(--accent-soft);
     color: #ffb4a6;
     font-size: 14px;
 }
@@ -312,12 +312,12 @@
 }
 
 .orders-slot:hover {
-    border-color: #ec7d6a;
+    border-color: var(--accent);
 }
 
 .orders-slot.selected {
-    border-color: #ec7d6a;
-    background-color: #ec7d6a;
+    border-color: var(--accent);
+    background-color: var(--accent);
 }
 
 /* Shown only on small screens */
@@ -368,7 +368,7 @@
         padding: 15px 20px;
         border: none;
         border-radius: 12px;
-        background-color: #ec7d6a;
+        background-color: var(--accent);
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45);
         color: #fff;
         font-size: 16px;

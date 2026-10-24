@@ -15,7 +15,7 @@
 
 .text-field:focus {
     outline: none;
-    border-color: #ec7d6a;
+    border-color: var(--accent);
 }
 
 .text-field--invalid,
@@ -64,7 +64,7 @@
 }
 
 .text-field-eye:focus-visible {
-    outline: 2px solid #ec7d6a;
+    outline: 2px solid var(--accent);
 }
 
 /* Native time pickers with light icons on the dark background */

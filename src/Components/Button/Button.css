@@ -15,8 +15,8 @@
 
 .app-button--primary {
     border: none;
-    background-color: #ec7d6a;
-    box-shadow: 0px 0px 25px -9px #ec7d6a;
+    background-color: var(--accent);
+    box-shadow: 0px 0px 25px -9px var(--accent);
 }
 
 .app-button--primary:hover {
@@ -29,5 +29,5 @@
 }
 
 .app-button--secondary:hover {
-    border-color: #ec7d6a;
+    border-color: var(--accent);
 }

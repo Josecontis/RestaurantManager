@@ -112,3 +112,18 @@ ALTER TABLE settings ADD COLUMN IF NOT EXISTS delivery_radius_km NUMERIC(4, 1) N
 ALTER TABLE settings ADD COLUMN IF NOT EXISTS delivery_min_order NUMERIC(8, 2) NOT NULL DEFAULT 10;
 ALTER TABLE settings ADD COLUMN IF NOT EXISTS delivery_fees JSONB NOT NULL
   DEFAULT '[{"upToKm": 3, "fee": 2}, {"upToKm": 5, "fee": 3}]';
+
+-- Look of the site, the same code for any restaurant: name, main color and logo
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS restaurant_name TEXT NOT NULL DEFAULT 'Wellness Pizza';
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS accent_color TEXT NOT NULL DEFAULT '#ec7d6a'
+  CHECK (accent_color ~ '^#[0-9a-f]{6}$');
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS logo_url TEXT;
+
+-- Logo and dish photos, already made smaller by the browser.
+-- key is "logo" or "dish-<id>"; replacing a photo overwrites its row.
+CREATE TABLE IF NOT EXISTS images (
+  key TEXT PRIMARY KEY,
+  content_type TEXT NOT NULL,
+  data BYTEA NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);

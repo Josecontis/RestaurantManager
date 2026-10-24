@@ -4,7 +4,7 @@
     position: fixed;
     top: 0;
     left: 0;
-    background-color: #ec7d6a71;
+    background-color: var(--accent-glow);
     z-index: 30;
     display: flex;
     justify-content: center;
@@ -17,6 +17,21 @@
     width: min(400px, 90vw);
     border-radius: 10px;
     padding: 30px;
+}
+
+.modal-container--image {
+    width: min(520px, 92vw);
+    padding: 16px 16px 25px;
+}
+
+.modal-image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    max-height: 60vh;
+    margin-bottom: 18px;
+    border-radius: 10px;
+    object-fit: cover;
 }
 
 .modal-title {

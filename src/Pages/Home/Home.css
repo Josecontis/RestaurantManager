@@ -19,14 +19,28 @@
 }
 
 .home-title-container {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Grid, so the floats of title and date stay one under the other */
+.home-title-text {
     display: inline-grid;
 }
 
+.home-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    object-fit: contain;
+}
+
+/* The name exactly as the admin wrote it */
 .home-title {
     float: left;
     font-size: 24px;
     font-weight: bolder;
-    text-transform: capitalize;
 }
 
 .home-subtitle {

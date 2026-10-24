@@ -19,6 +19,12 @@ import {
   isDeliveryAvailable,
   isInItaly,
 } from "./delivery.js";
+import {
+  IMAGE_TYPES,
+  imageUrl,
+  isImage,
+  saveImage,
+} from "./images.js";
 import { TIME_ZONE, availableSlots, slotCapacity } from "./slots.js";
 
 const PORT = process.env.PORT || 4000;
@@ -360,6 +366,37 @@ app.get("/api/delivery/quote", async (req, res) => {
   res.json(deliveryQuote(settings, lat, lon));
 });
 
+const brandSettings = async () => {
+  const { rows } = await query(
+    `SELECT restaurant_name AS name, accent_color AS "accentColor",
+       logo_url AS "logoUrl"
+     FROM settings`
+  );
+  return rows[0];
+};
+
+// Name, main color and logo of the restaurant, read by the app when it opens
+app.get("/api/settings", async (req, res) => {
+  res.json(await brandSettings());
+});
+
+// Photos are saved once and never change at the same address: browsers keep them
+app.get("/api/images/:key", async (req, res) => {
+  const { rows } = await query(
+    "SELECT content_type, data FROM images WHERE key = $1",
+    [req.params.key]
+  );
+  if (rows.length === 0) {
+    throw new RequestError("Immagine non trovata", 404);
+  }
+  res.set({
+    "Content-Type": rows[0].content_type,
+    "Cache-Control": "public, max-age=31536000, immutable",
+    "X-Content-Type-Options": "nosniff",
+  });
+  res.send(rows[0].data);
+});
+
 app.post("/api/admin/login", async (req, res) => {
   const lockMinutes = loginLockMinutes(req.ip);
   if (lockMinutes > 0) {
@@ -591,6 +628,82 @@ app.put("/api/admin/delivery", requireAdmin, async (req, res) => {
   res.json(await deliverySettings());
 });
 
+app.put("/api/admin/brand", requireAdmin, async (req, res) => {
+  const name = text(req.body?.name, 2, 60);
+  const accentColor =
+    typeof req.body?.accentColor === "string" &&
+    /^#[0-9a-f]{6}$/.test(req.body.accentColor)
+      ? req.body.accentColor
+      : null;
+  if (!name) {
+    throw new RequestError("Il nome va da 2 a 60 caratteri");
+  }
+  if (!accentColor) {
+    throw new RequestError("Colore non valido");
+  }
+  await query("UPDATE settings SET restaurant_name = $1, accent_color = $2", [
+    name,
+    accentColor,
+  ]);
+  res.json(await brandSettings());
+});
+
+// "logo" or "dish-<id>"
+const imageKey = (value) =>
+  /^(logo|dish-[1-9][0-9]{0,8})$/.test(value) ? value : null;
+
+// The body is the image itself, already made smaller by the browser
+app.put(
+  "/api/admin/images/:key",
+  requireAdmin,
+  express.raw({ type: IMAGE_TYPES, limit: "1mb" }),
+  async (req, res) => {
+    const key = imageKey(req.params.key);
+    const contentType = (req.get("Content-Type") || "").split(";")[0].trim();
+    if (!key) {
+      throw new RequestError("Immagine non valida");
+    }
+    if (!isImage(contentType, req.body)) {
+      throw new RequestError("Carica una foto JPEG, PNG o WebP");
+    }
+    const url = imageUrl(key);
+    await transaction(async (client) => {
+      if (key === "logo") {
+        await client.query("UPDATE settings SET logo_url = $1", [url]);
+      } else {
+        const { rowCount } = await client.query(
+          "UPDATE dishes SET image_url = $1 WHERE id = $2",
+          [url, Number(key.slice(5))]
+        );
+        if (rowCount === 0) {
+          throw new RequestError("Piatto non trovato", 404);
+        }
+      }
+      await saveImage(client, key, contentType, req.body);
+    });
+    res.json({ url });
+  }
+);
+
+// A dish without photo goes back to the pizza drawn in CSS
+app.delete("/api/admin/images/:key", requireAdmin, async (req, res) => {
+  const key = imageKey(req.params.key);
+  if (!key) {
+    throw new RequestError("Immagine non valida");
+  }
+  await transaction(async (client) => {
+    if (key === "logo") {
+      await client.query("UPDATE settings SET logo_url = NULL");
+    } else {
+      await client.query("UPDATE dishes SET image_url = NULL WHERE id = $1", [
+        Number(key.slice(5)),
+      ]);
+    }
+    await client.query("DELETE FROM images WHERE key = $1", [key]);
+  });
+  res.status(204).end();
+});
+
 const kitchenSettings = async () => {
   const { rows } = await query(
     `SELECT pizzas_per_hour AS "pizzasPerHour",
@@ -705,6 +818,9 @@ app.delete("/api/admin/tablets/:id", requireAdmin, async (req, res) => {
 app.use((error, req, res, next) => {
   if (error instanceof RequestError) {
     return res.status(error.status).json({ error: error.message });
+  }
+  if (error.type === "entity.too.large") {
+    return res.status(413).json({ error: "Il file è troppo grande" });
   }
   // Malformed or too large request bodies
   if (error.status >= 400 && error.status < 500) {

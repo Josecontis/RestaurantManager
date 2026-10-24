@@ -1,5 +1,6 @@
 import React from "react";
 import { useState } from "react";
+import { imageSrc } from "../../api";
 import { Modal } from "../Modal/Modal";
 
 import "./Card.css";
@@ -11,7 +12,21 @@ export const Card = ({ cards, onSelect }) => {
     return (
       <div key={index}>
         <div className="card-container" onClick={() => onSelect(el)}>
-          <div className="card-image" />
+          {el.imageUrl ? (
+            <img
+              className="card-image card-photo"
+              src={imageSrc(el.imageUrl)}
+              alt={el.name}
+              loading="lazy"
+              onClick={(event) => {
+                // The photo opens bigger and does not add the dish to the order
+                event.stopPropagation();
+                setMoreInfo(el.name);
+              }}
+            />
+          ) : (
+            <div className="card-image" />
+          )}
           <div className="card-title">{el.name}</div>
           <div className="card-description">{el.description}</div>
           <div className="card-price">
@@ -39,6 +54,7 @@ export const Card = ({ cards, onSelect }) => {
             title={el.name}
             description={el.description}
             info={el.info}
+            image={imageSrc(el.imageUrl)}
           />
         )}
       </div>

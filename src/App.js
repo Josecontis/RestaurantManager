@@ -1,4 +1,5 @@
 import "./App.css";
+import { BrandProvider } from "./brand";
 import { Admin } from "./Pages/Admin/Admin";
 import { Home } from "./Pages/Home/Home";
 import { Sidebar } from "./Components/Sidebar/Sidebar";
@@ -7,6 +8,7 @@ import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 function App() {
   return (
     // GitHub Pages cannot serve paths like /Orders: the route lives after the #
+    <BrandProvider>
     <HashRouter>
       <Sidebar />
       <Routes>
@@ -20,6 +22,7 @@ function App() {
       </Routes>
       {/* <Footer /> */}
     </HashRouter>
+    </BrandProvider>
   );
 }
 

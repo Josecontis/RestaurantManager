@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { getMenu, orderTypeCode, sendOrder } from "../../api";
+import { getMenu, imageSrc, orderTypeCode, sendOrder } from "../../api";
+import { useBrand } from "../../brand";
 import { Button } from "../../Components/Button/Button";
 import { Orders } from "../../Components/Orders/Orders";
 import { SearchField } from "../../Components/SearchField/SearchField";
@@ -8,6 +9,7 @@ import { ThankYou } from "../../Components/ThankYou/ThankYou";
 import "./Home.css";
 
 export const Home = () => {
+  const { brand } = useBrand();
   const [menu, setMenu] = useState(null);
   const [menuError, setMenuError] = useState(null);
   const [menuAttempt, setMenuAttempt] = useState(0);
@@ -135,8 +137,13 @@ export const Home = () => {
       className={orders.length !== 0 ? "home-page__collapsed" : "home-page"}
     >
       <div className="home-title-container">
-        <div className="home-title">Wellness Pizza</div>
-        <div className="home-subtitle"> {date} </div>
+        {brand.logoUrl && (
+          <img className="home-logo" src={imageSrc(brand.logoUrl)} alt="" />
+        )}
+        <div className="home-title-text">
+          <div className="home-title">{brand.name}</div>
+          <div className="home-subtitle"> {date} </div>
+        </div>
       </div>
       <div className="home-search-container">
         <SearchField value={search} onChange={setSearch} />
