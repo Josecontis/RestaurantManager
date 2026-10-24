@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   assignDriver,
   formatSlot,
   getAdminOrders,
   getDrivers,
+  getOrdersView,
   orderTypeLabels,
+  rememberOrdersView,
   setOrderStatus,
 } from "../../api";
 import { Button } from "../../Components/Button/Button";
@@ -68,9 +70,75 @@ const playNewOrderSound = () => {
   } catch {}
 };
 
-// Highest order number already seen, null before the first load. Kept outside the
-// component so orders that arrive while the admin is on another page still ring.
-let lastOrderId = null;
+// Pickup or delivery time, arrival time for the orders at the table, in Italian time
+export const isToday = (order) =>
+  new Date(order.scheduledAt || order.createdAt).toLocaleDateString("it-IT", {
+    timeZone: "Europe/Rome",
+  }) === new Date().toLocaleDateString("it-IT", { timeZone: "Europe/Rome" });
+
+// Who works on which orders: the cook prepares all of them and serves the tables,
+// the cash desk hands over the pickups, the riders take the deliveries.
+// Cash desk and riders see only orders the cook has marked as ready.
+const VIEWS = [
+  {
+    key: "cucina",
+    label: "Cucina",
+    note: "Tutti gli ordini da preparare; quelli al tavolo, quando sono pronti, si segnano anche come serviti. Ritiri e consegne pronti passano a Cassa e Rider.",
+    sound: "un suono avvisa quando arriva un ordine nuovo",
+    empty: "Nessun ordine da preparare.",
+    isActive: (order) =>
+      order.status === "nuovo" ||
+      order.status === "in_preparazione" ||
+      (order.orderType === "sul_posto" && order.status === "pronto"),
+    isDone: (order) =>
+      order.orderType === "sul_posto" && order.status === "completato",
+  },
+  {
+    key: "cassa",
+    label: "Cassa",
+    note: "Ordini da ritirare già pronti in cucina: segnali come ritirati quando il cliente li prende.",
+    sound: "un suono avvisa quando un ritiro diventa pronto",
+    empty: "Nessun ritiro pronto.",
+    isActive: (order) =>
+      order.orderType === "ritiro" && order.status === "pronto",
+    isDone: (order) =>
+      order.orderType === "ritiro" && order.status === "completato",
+  },
+  {
+    key: "rider",
+    label: "Rider",
+    note: "Consegne già pronte in cucina: scegli il driver e segnale come consegnate al ritorno.",
+    sound: "un suono avvisa quando una consegna diventa pronta",
+    empty: "Nessuna consegna pronta.",
+    isActive: (order) =>
+      order.orderType === "consegna" && order.status === "pronto",
+    isDone: (order) =>
+      order.orderType === "consegna" && order.status === "completato",
+  },
+];
+
+// What makes each section ring: a new order for the kitchen, a new ready order for
+// cash desk and riders. Kept outside the component, so what happened while the admin
+// was on another page still rings; null before the first load.
+const soundTriggers = {
+  cucina: (orders) => [Math.max(0, ...orders.map((order) => order.id))],
+  cassa: (orders) => orders.filter(VIEWS[1].isActive).map((order) => order.id),
+  rider: (orders) => orders.filter(VIEWS[2].isActive).map((order) => order.id),
+};
+const lastTriggers = { cucina: null, cassa: null, rider: null };
+
+// True when the section has something it did not have at the last load
+const hasNews = (view, orders) => {
+  const ids = soundTriggers[view](orders);
+  const before = lastTriggers[view];
+  lastTriggers[view] = ids;
+  if (before === null) {
+    return false;
+  }
+  return view === "cucina"
+    ? ids[0] > before[0]
+    : ids.some((id) => !before.includes(id));
+};
 
 // Browsers that can tell whether the page has been touched since it was loaded
 const isSoundBlockedNow = () => navigator.userActivation?.hasBeenActive === false;
@@ -103,11 +171,104 @@ const DriverDropdown = ({ order, drivers, isBusy, onChange }) => {
   );
 };
 
+// One order; the driver can be chosen only where the riders work
+const OrderCard = ({ order, drivers, canChooseDriver, isBusy, onDriver, onStatus }) => {
+  const driver = drivers.find((item) => item.id === order.driverId);
+  return (
+    <div
+      className={
+        "admin-card admin-order-card" +
+        (order.status === "completato" ? " admin-card--done" : "")
+      }
+    >
+      <div className="admin-order-body">
+      <div className="admin-card-header">
+        <span className="admin-card-number">#{order.id}</span>
+        <span className="admin-card-time">{formatTime(order.createdAt)}</span>
+      </div>
+      <div className="admin-card-main">
+        {order.tableNumber ? `Tavolo ${order.tableNumber}` : order.customerName}
+      </div>
+      <div className="admin-badge">
+        {orderTypeLabels[order.orderType]}
+        {order.scheduledAt && ` alle ${formatSlot(order.scheduledAt)}`}
+      </div>
+      <div className={`admin-badge admin-status-${order.status}`}>
+        {statusLabel(order.status, order.orderType)}
+      </div>
+      {order.customerPhone && (
+        <div className="admin-card-detail">Tel. {order.customerPhone}</div>
+      )}
+      {order.customerAddress && (
+        <div className="admin-card-detail">{order.customerAddress}</div>
+      )}
+      {order.orderType === "consegna" && canChooseDriver && (
+        <div className="admin-card-driver">
+          <DriverDropdown
+            order={order}
+            drivers={drivers}
+            isBusy={isBusy}
+            onChange={onDriver}
+          />
+        </div>
+      )}
+      {order.orderType === "consegna" && !canChooseDriver && (
+        <div className="admin-card-detail">
+          {driver ? `Driver: ${driver.name}` : "Nessun driver assegnato"}
+        </div>
+      )}
+      <ul className="admin-card-items">
+        {order.items.map((item, index) => (
+          <li key={index}>
+            <span>
+              {item.quantity} x {item.name}
+            </span>
+            <span>{formatPrice(item.quantity * item.unitPrice)}</span>
+          </li>
+        ))}
+        {order.deliveryFee > 0 && (
+          <li>
+            <span>
+              Consegna
+              {order.deliveryKm !== null &&
+                ` (${order.deliveryKm.toLocaleString("it-IT")} km)`}
+            </span>
+            <span>{formatPrice(order.deliveryFee)}</span>
+          </li>
+        )}
+      </ul>
+      <div className="admin-card-total">
+        <span>Totale</span>
+        <span>{formatPrice(order.total)}</span>
+      </div>
+      </div>
+      {nextStatus(order.status) && (
+        <Button
+          className="admin-card-next"
+          onClick={() => onStatus(order, nextStatus(order.status))}
+        >
+          Segna come{" "}
+          {statusLabel(nextStatus(order.status), order.orderType).toLowerCase()}
+        </Button>
+      )}
+    </div>
+  );
+};
+
 export const AdminOrders = ({ onUnauthorized }) => {
   const [orders, setOrders] = useState(null);
   const [drivers, setDrivers] = useState([]);
   const [error, setError, handleError] = useAdminError(onUnauthorized);
   const [isSoundBlocked, setIsSoundBlocked] = useState(isSoundBlockedNow);
+  const [viewKey, setViewKey] = useState(() =>
+    VIEWS.some((item) => item.key === getOrdersView())
+      ? getOrdersView()
+      : VIEWS[0].key
+  );
+  const view = VIEWS.find((item) => item.key === viewKey);
+  // Read by the automatic refresh without restarting it
+  const viewRef = useRef(viewKey);
+  viewRef.current = viewKey;
 
   const load = useCallback(async () => {
     try {
@@ -115,11 +276,11 @@ export const AdminOrders = ({ onUnauthorized }) => {
         getAdminOrders(),
         getDrivers(),
       ]);
-      const newestId = Math.max(0, ...newOrders.map((order) => order.id));
-      if (lastOrderId !== null && newestId > lastOrderId) {
+      // Every section is checked, only the open one rings
+      const news = VIEWS.filter((item) => hasNews(item.key, newOrders));
+      if (news.some((item) => item.key === viewRef.current)) {
         playNewOrderSound();
       }
-      lastOrderId = newestId;
       setOrders(newOrders);
       setDrivers(newDrivers);
       setError(null);
@@ -176,12 +337,34 @@ export const AdminOrders = ({ onUnauthorized }) => {
     };
   }, [isSoundBlocked]);
 
+  const chooseView = (key) => {
+    setViewKey(key);
+    rememberOrdersView(key);
+  };
+
+  const activeOrders = orders ? orders.filter(view.isActive) : [];
+  const doneOrders = orders
+    ? orders.filter((order) => view.isDone(order) && isToday(order))
+    : [];
+
   return (
     <div className="admin-section">
+      <ul className="tab-container admin-subtabs">
+        {VIEWS.map((item) => (
+          <li
+            key={item.key}
+            className={"tab-item " + (item.key === viewKey && "active")}
+            onClick={() => chooseView(item.key)}
+          >
+            {item.label}
+            {orders && ` (${orders.filter(item.isActive).length})`}
+          </li>
+        ))}
+      </ul>
       <div className="admin-toolbar">
         <div className="admin-note">
-          Gli ordini si aggiornano da soli ogni {REFRESH_SECONDS} secondi; un
-          suono avvisa quando ne arriva uno nuovo.
+          {view.note} Si aggiorna da sola ogni {REFRESH_SECONDS} secondi;{" "}
+          {view.sound}.
         </div>
         <Button variant="secondary" onClick={load}>
           Aggiorna
@@ -190,95 +373,49 @@ export const AdminOrders = ({ onUnauthorized }) => {
       {isSoundBlocked && (
         <div className="admin-error">
           Il browser tiene il suono spento finché non tocchi la pagina: tocca
-          un punto qualsiasi per sentire l'avviso dei nuovi ordini.
+          un punto qualsiasi per sentire gli avvisi.
         </div>
       )}
       {error && <div className="admin-error">{error}</div>}
       {orders === null && !error && (
         <div className="admin-note">Caricamento degli ordini...</div>
       )}
-      {orders && orders.length === 0 && (
-        <div className="admin-note">Nessun ordine ricevuto.</div>
+      {orders && activeOrders.length === 0 && (
+        <div className="admin-note">{view.empty}</div>
       )}
       <div className="admin-grid">
-        {orders &&
-          orders.map((order) => (
-            <div key={order.id} className="admin-card">
-              <div className="admin-card-header">
-                <span className="admin-card-number">#{order.id}</span>
-                <span className="admin-card-time">
-                  {formatTime(order.createdAt)}
-                </span>
-              </div>
-              <div className="admin-card-main">
-                {order.tableNumber
-                  ? `Tavolo ${order.tableNumber}`
-                  : order.customerName}
-              </div>
-              <div className="admin-badge">
-                {orderTypeLabels[order.orderType]}
-                {order.scheduledAt && ` alle ${formatSlot(order.scheduledAt)}`}
-              </div>
-              <div className={`admin-badge admin-status-${order.status}`}>
-                {statusLabel(order.status, order.orderType)}
-              </div>
-              {order.customerPhone && (
-                <div className="admin-card-detail">
-                  Tel. {order.customerPhone}
-                </div>
-              )}
-              {order.customerAddress && (
-                <div className="admin-card-detail">{order.customerAddress}</div>
-              )}
-              {order.orderType === "consegna" && (
-                <div className="admin-card-driver">
-                  <DriverDropdown
-                    order={order}
-                    drivers={drivers}
-                    isBusy={isBusy}
-                    onChange={changeDriver}
-                  />
-                </div>
-              )}
-              <ul className="admin-card-items">
-                {order.items.map((item, index) => (
-                  <li key={index}>
-                    <span>
-                      {item.quantity} x {item.name}
-                    </span>
-                    <span>{formatPrice(item.quantity * item.unitPrice)}</span>
-                  </li>
-                ))}
-                {order.deliveryFee > 0 && (
-                  <li>
-                    <span>
-                      Consegna
-                      {order.deliveryKm !== null &&
-                        ` (${order.deliveryKm.toLocaleString("it-IT")} km)`}
-                    </span>
-                    <span>{formatPrice(order.deliveryFee)}</span>
-                  </li>
-                )}
-              </ul>
-              <div className="admin-card-total">
-                <span>Totale</span>
-                <span>{formatPrice(order.total)}</span>
-              </div>
-              {nextStatus(order.status) && (
-                <Button
-                  className="admin-card-next"
-                  onClick={() => changeStatus(order, nextStatus(order.status))}
-                >
-                  Segna come{" "}
-                  {statusLabel(
-                    nextStatus(order.status),
-                    order.orderType
-                  ).toLowerCase()}
-                </Button>
-              )}
-            </div>
-          ))}
+        {activeOrders.map((order) => (
+          <OrderCard
+            key={order.id}
+            order={order}
+            drivers={drivers}
+            canChooseDriver={view.key === "rider"}
+            isBusy={isBusy}
+            onDriver={changeDriver}
+            onStatus={changeStatus}
+          />
+        ))}
       </div>
+      {doneOrders.length !== 0 && (
+        <>
+          <div className="admin-list-title admin-done-title">
+            Completati oggi
+          </div>
+          <div className="admin-grid">
+            {doneOrders.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                drivers={drivers}
+                canChooseDriver={false}
+                isBusy={isBusy}
+                onDriver={changeDriver}
+                onStatus={changeStatus}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 };

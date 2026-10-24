@@ -210,6 +210,31 @@
     margin-top: 12px;
 }
 
+/* The button stays at the bottom, aligned between cards of different height */
+.admin-order-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-order-body {
+    flex: 1;
+}
+
+.admin-subtabs {
+    padding-top: 0;
+    margin-bottom: 20px;
+}
+
+/* Space between the orders to work on, the title and the completed ones */
+.admin-done-title {
+    margin: 40px 0 16px;
+}
+
+/* Completed orders stay visible but step back */
+.admin-card--done {
+    opacity: 0.6;
+}
+
 .admin-hours {
     max-width: 620px;
 }

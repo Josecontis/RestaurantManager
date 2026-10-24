@@ -10,7 +10,7 @@ import { AddressField } from "../../Components/AddressField/AddressField";
 import { Button } from "../../Components/Button/Button";
 import { ListRow } from "../../Components/ListRow/ListRow";
 import { TextField } from "../../Components/TextField/TextField";
-import { statusLabel } from "./AdminOrders";
+import { isToday, statusLabel } from "./AdminOrders";
 import { DeliveryMap, STATUS_COLORS } from "./DeliveryMap";
 import { useAdminError } from "./useAdminError";
 
@@ -19,10 +19,6 @@ const MAX_BANDS = 6;
 
 const formatPrice = (value) =>
   value.toLocaleString("it-IT", { style: "currency", currency: "EUR" });
-
-const isToday = (time) =>
-  new Date(time).toLocaleDateString("it-IT", { timeZone: "Europe/Rome" }) ===
-  new Date().toLocaleDateString("it-IT", { timeZone: "Europe/Rome" });
 
 // Settings as the form keeps them: numbers as written in the fields
 const toForm = (settings) => ({
@@ -73,7 +69,7 @@ export const AdminDeliveries = ({ onUnauthorized }) => {
   }, [loadOrders]);
 
   const todayDeliveries = orders.filter(
-    (order) => order.orderType === "consegna" && isToday(order.scheduledAt)
+    (order) => order.orderType === "consegna" && isToday(order)
   );
   const mapDeliveries = todayDeliveries
     .filter((order) => order.customerLat !== null)

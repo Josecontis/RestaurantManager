@@ -33,6 +33,13 @@ const writeStorage = (key, value) => {
 // { id, tableNumber, code } of this device, when an admin registered it
 export const getTablet = () => readStorage(TABLET_KEY);
 
+// Orders section last opened on this device: the kitchen tablet reopens on the kitchen
+const ORDERS_VIEW_KEY = "restaurantManager.ordersView";
+
+export const getOrdersView = () => readStorage(ORDERS_VIEW_KEY);
+
+export const rememberOrdersView = (view) => writeStorage(ORDERS_VIEW_KEY, view);
+
 // Last name, color and logo seen, so the next visit starts with them
 const BRAND_KEY = "restaurantManager.brand";
 
