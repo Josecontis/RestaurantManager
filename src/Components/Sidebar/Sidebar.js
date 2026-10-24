@@ -1,5 +1,4 @@
 import "./Sidebar.css";
-import { HomeIcon } from "../Assets/HomeIcon";
 import { ClocheIcon } from "../Assets/ClocheIcon";
 import { SettingsIcon } from "../Assets/SettingsIcon";
 import { useLocation, useNavigate } from "react-router-dom";

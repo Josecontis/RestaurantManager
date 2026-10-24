@@ -4,7 +4,7 @@ import { useState } from "react";
 import "./Modal.css";
 
 export const Modal = ({ title, onClose, description, info, open }) => {
-  const [isOpen, setIsOpen] = useState(open);
+  const [isOpen] = useState(open);
   return (
     isOpen && (
       <div className="modal-background" onClick={onClose}>
