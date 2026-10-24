@@ -1,6 +1,6 @@
 # RestaurantManager: server, database, tavoli e area admin
 
-Data: 22/10/2026, aggiornato il 24/10/2026 · Stato: fasi 1, 3-6 e 8-15 fatte e provate in locale; fasi 2 e 7 (account e messa online) da fare insieme
+Data: 22/10/2026, aggiornato il 24/10/2026 · Stato: fasi 1, 3-6 e 8-16 fatte e provate in locale; fasi 2 e 7 (account e messa online) da fare insieme
 
 ## Contesto
 
@@ -124,7 +124,7 @@ sequenceDiagram
 
 | Scheda | Cosa fa | File |
 |---|---|---|
-| Ordini | 100 ordini, aggiornati ogni 30 secondi, in fila per urgenza; stato di ogni ordine con il pulsante per il passo successivo; suono quando arriva un ordine nuovo; sulle consegne una tendina per scegliere il driver | `src/Pages/Admin/AdminOrders.js` |
+| Ordini | tre sotto-schede, Cucina, Cassa e Rider (vedi "Cucina, Cassa e Rider"); ordini aggiornati ogni 30 secondi, in fila per urgenza, con il pulsante per il passo successivo e un suono di avviso | `src/Pages/Admin/AdminOrders.js` |
 | Driver | aggiunge e rimuove driver, li mette o toglie dal servizio, mostra quanti sono in servizio | `src/Pages/Admin/AdminDrivers.js` |
 | Consegne | mappa con la pizzeria, la zona e le consegne di oggi colorate per stato; indirizzo della pizzeria, raggio, ordine minimo e fasce di costo | `src/Pages/Admin/AdminDeliveries.js`, `src/Pages/Admin/DeliveryMap.js` |
 | Orari | per ogni giorno: aperto o chiuso, prima e ultima fascia; si salva tutta la settimana insieme. Sotto, "Cucina e limiti": pizze all'ora, pizze massime per ordine, ordini al giorno per telefono | `src/Pages/Admin/AdminHours.js`, `src/Pages/Admin/AdminKitchen.js` |
@@ -151,7 +151,7 @@ sequenceDiagram
   end
 ```
 
-- Un driver fa **una consegna per fascia**: nella tendina chi è già impegnato a quell'ora è grigio e non selezionabile, e il server lo rifiuta comunque (`server/index.js:487-524`, `src/Pages/Admin/AdminOrders.js:79-104`, `src/Pages/Admin/AdminOrders.js:149-156`).
+- Un driver fa **una consegna per fascia**: nella tendina chi è già impegnato a quell'ora è grigio e non selezionabile, e il server lo rifiuta comunque (`server/index.js:487-524`, `src/Pages/Admin/AdminOrders.js:147-172`, `src/Pages/Admin/AdminOrders.js:307-314`). Dal 24/10/2026 la tendina sta solo nella sotto-scheda Rider.
 - Nella tendina compaiono anche i driver non in servizio, con la scritta "(non in servizio)", per poterli usare in caso di imprevisti.
 - Gli orari sono controllati dal server: ore valide e ultima fascia non prima della prima (`server/index.js:541-576`).
 - Togliere un driver dal servizio non cambia le consegne già prenotate: diminuiscono solo i posti delle fasce ancora libere.
@@ -188,10 +188,10 @@ sequenceDiagram
 | Regola | Dettaglio |
 |---|---|
 | Ordine della lista | prima gli ordini da completare, dal più urgente: orario di ritiro o consegna, oppure ora di arrivo per gli ordini al tavolo; sotto i completati, i più recenti per primi (`server/index.js:462-467`) |
-| Cambio di stato | un tocco sul pulsante porta al passo successivo (`src/Pages/Admin/AdminOrders.js:267-278`); non si torna indietro dall'app (scelta del 24/10/2026: più rapido in cucina) |
+| Cambio di stato | un tocco sul pulsante porta al passo successivo (`src/Pages/Admin/AdminOrders.js:242-250`); non si torna indietro dall'app (scelta del 24/10/2026: più rapido in cucina) |
 | Stati validi | solo i 4 dell'elenco, controllati dal server (`server/index.js:36`, `server/index.js:472-485`) e dal database |
-| Suono | due note generate dal browser, senza file audio (`src/Pages/Admin/AdminOrders.js:53-69`); suona quando compare un numero d'ordine più alto dell'ultimo visto (`src/Pages/Admin/AdminOrders.js:118-122`); l'ultimo numero visto resta ricordato anche cambiando pagina (`src/Pages/Admin/AdminOrders.js:71-73`) |
-| Avviso "suono spento" | se il browser blocca il suono compare una riga che chiede di toccare la pagina; sparisce al primo tocco (`src/Pages/Admin/AdminOrders.js:165-177`, `src/Pages/Admin/AdminOrders.js:190-195`) |
+| Suono | due note generate dal browser, senza file audio (`src/Pages/Admin/AdminOrders.js:55-71`). Dal pomeriggio del 24/10/2026 dipende dalla sotto-scheda aperta: Cucina per un ordine nuovo, Cassa e Rider per un loro ordine appena diventato pronto (`src/Pages/Admin/AdminOrders.js:120-141`, `src/Pages/Admin/AdminOrders.js:276-280`). Quello che è già stato visto resta ricordato anche cambiando pagina |
+| Avviso "suono spento" | se il browser blocca il suono compare una riga che chiede di toccare la pagina; sparisce al primo tocco (`src/Pages/Admin/AdminOrders.js:323-335`, `src/Pages/Admin/AdminOrders.js:370-375`) |
 
 - **Il suono non è immediato**: arriva con l'aggiornamento automatico, quindi fino a 30 secondi dopo l'ordine (subito se si preme "Aggiorna").
 - **Il suono richiede un tocco**: i browser suonano solo dopo che la persona ha toccato la pagina. Dopo il login va bene; se si ricarica la pagina restando collegati compare l'avviso "Il browser tiene il suono spento..." finché non si tocca un punto qualsiasi. L'avviso si basa su una funzione che Chrome, Edge e Safari hanno; su un browser che non ce l'ha l'avviso non compare, ma la regola del tocco resta.
@@ -214,6 +214,41 @@ sequenceDiagram
 Riusa `Button` per il pulsante e lo stile `admin-badge` per lo stato. Tocca le API (un servizio nuovo, uno con un campo in più) e lo schema del database; non tocca variabili d'ambiente, deploy o test.
 
 Prove del 24/10/2026 con un database di prova: ordini dei tre tipi, ogni passo di stato fino a Servito, Ritirato e Consegnato, lista nell'ordine giusto, stato inesistente, ordine inesistente e richiesta senza login rifiutati; suono solo per un ordine nuovo (non al primo caricamento, non con "Aggiorna" senza novità, non dopo un cambio di stato); con le regole normali di Chrome sui suoni: suona dopo il login, suona tornando dalla pagina del menu se nel frattempo è arrivato un ordine, dopo un ricaricamento resta spento e mostra l'avviso, dopo un tocco suona di nuovo; confermato anche dalla prova dell'utente; database senza la colonna che la riceve al riavvio del server con gli ordini in stato "Nuovo"; schermate su PC e smartphone, nessun errore in console.
+
+## Cucina, Cassa e Rider (24/10/2026, pomeriggio)
+
+La scheda "Ordini" è divisa in tre sotto-schede, una per chi lavora sugli ordini. Cassa e Rider vedono solo ordini che il cuoco ha già segnato come pronti.
+
+| Sotto-scheda | Chi la usa | Ordini che vede | Cosa può fare | Suono |
+|---|---|---|---|---|
+| Cucina | cuoco | tutti gli ordini Nuovi e In preparazione (tavolo, ritiro, consegna) e quelli al tavolo già Pronti | Nuovo → In preparazione → Pronto; per i tavoli anche Pronto → Servito | quando arriva un ordine nuovo |
+| Cassa | cassa | ritiri Pronti | Pronto → Ritirato | quando un ritiro diventa pronto |
+| Rider | ragazzo delle consegne | consegne Pronte | sceglie il driver dalla tendina; Pronto → Consegnato | quando una consegna diventa pronta |
+
+```mermaid
+sequenceDiagram
+  actor K as Cuoco (Cucina)
+  actor C as Cassa
+  actor R as Rider
+  participant S as Server
+  S-->>K: suono, ordine nuovo #34 (consegna)
+  K->>S: In preparazione, poi Pronto
+  S-->>R: #34 compare nella sotto-scheda Rider, suono
+  R->>S: sceglie il driver Luca
+  R->>S: al ritorno "Segna come consegnato"
+  Note over K,C: un ritiro pronto va invece alla Cassa, che lo segna Ritirato
+```
+
+- Le regole di ogni sotto-scheda sono in `src/Pages/Admin/AdminOrders.js:82-118`; la card dell'ordine è la stessa per tutte e tre (`src/Pages/Admin/AdminOrders.js:175-253`).
+- Sotto gli ordini da lavorare c'è "Completati oggi", in grigio: per la Cucina i tavoli serviti, per la Cassa i ritiri, per il Rider le consegne.
+- Accanto al nome di ogni sotto-scheda c'è il numero di ordini da lavorare, per esempio "Cassa (1)".
+- Ogni dispositivo ricorda l'ultima sotto-scheda aperta (`src/api.js:37-41`): il tablet della cucina si riapre su Cucina, il telefono del rider su Rider.
+- Il suono parte solo nella sotto-scheda aperta: se la Cassa è aperta, una consegna pronta non suona.
+- Fuori dalla sotto-scheda Rider la consegna mostra il driver solo come testo ("Driver: Luca" o "Nessun driver assegnato").
+- Il pulsante "Segna come..." sta sempre in fondo alla card: card vicine di lunghezza diversa hanno i pulsanti alla stessa altezza (`src/Pages/Admin/Admin.css`, classi `admin-order-card` e `admin-order-body`).
+- Le barre di scorrimento di tutto il sito sono sottili e grigie, in tinta con lo sfondo scuro (`src/index.css`).
+- Tutti entrano con lo stesso login admin: non ci sono ancora account separati per cuoco, cassa e rider, quindi ognuno può aprire anche le altre schede.
+- Provato il 24/10/2026 nel browser: ordine nuovo con suono in Cucina, ritiro portato a Pronto che passa alla Cassa, consegna pronta che non suona in Cassa, ritiro pronto che suona in Cassa, driver scelto e consegna segnata nel Rider, sotto-scheda ricordata dopo il ricaricamento, schermate su PC e telefono, nessun errore in console.
 
 ## Consegna, limiti, ringraziamento e aspetto del locale (24/10/2026)
 
@@ -502,6 +537,7 @@ Rispetto al piano iniziale `GET /api/categories` e `GET /api/dishes` sono divent
 | 13. Cucina e limiti | pizze all'ora, pizze per ordine, ordini per telefono, blocco del login | fatta il 24/10/2026 |
 | 14. Aspetto del locale | nome, colore, logo e foto delle pizze dall'admin; icona e titolo di partenza | fatta il 24/10/2026 |
 | 15. Piccole cose | test automatico riscritto, avvisi tolti | fatta il 24/10/2026 |
+| 16. Cucina, Cassa e Rider | ordini divisi per chi ci lavora, suono per sotto-scheda | fatta il 24/10/2026 |
 
 Prove fatte il 22/10/2026 su PC (1440x900), smartphone (390x844), tablet verticale (820x1180) e orizzontale (1180x820): ordine al tavolo scritto a mano, consegna, errore senza tavolo, login sbagliato e giusto, registrazione tablet, ordine con tavolo automatico, ordine visto dall'admin. Le API sono state provate anche con dati sbagliati (tavolo mancante, telefono non valido, piatto inesistente, codice tablet falso, CORS da un sito non autorizzato).
 
@@ -599,6 +635,16 @@ Cose da fare prossimamente, nell'ordine suggerito. Al 24/10/2026 sono fatti i pu
 | 14 | **Icona della scheda del browser e sito "white label"** | **fatto il 24/10/2026**: nome, colore e logo dalla scheda Ristorante; icona e titolo di partenza nuovi | il menu (pizze e prezzi) per un altro locale si cambia ancora dal database (punto 5) |
 | 15 | **Foto vere delle pizze, visibili e cliccabili** | **fatto il 24/10/2026**: foto rotonde nelle card, grandi toccandole, 8 foto di partenza | |
 
+### Da fare più avanti (indicati dall'utente il 24/10/2026)
+
+L'utente li descriverà meglio quando si comincerà.
+
+| Cosa | Note già note |
+|---|---|
+| **Mappa Google** | oggi la mappa delle consegne usa OpenStreetMap. ⚠️ Google chiede un account di fatturazione con carta di credito anche per l'uso gratuito: va contro il vincolo costo zero, da decidere insieme |
+| **Gestione degli ordini vicini** | consegne vicine tra loro da dare allo stesso driver: è l'idea C qui sotto. Le coordinate di ogni consegna sono già salvate dal 24/10/2026 |
+| Altri punti | da indicare |
+
 ### Nuove idee con l'AI
 
 | Idea | Cosa fa | Come, in breve | Prima di partire |
@@ -670,8 +716,14 @@ Note sulle idee:
 | 33 | Foto di partenza | 8 foto gratuite di Pexels scelte da me, caricate da sole su un database nuovo; l'admin le può cambiare | utente ("metto io foto gratuite"), 24/10/2026 |
 | 34 | Icona e titolo di partenza | spicchio di pizza disegnato al posto del logo di React (tolto `favicon.ico`), titolo "Restaurant Manager", app installata "Ristorante" | scelta mia, 24/10/2026 |
 | 35 | Test automatico | simula il server e controlla nome e colore del locale e il menu | scelta mia, 24/10/2026 |
-| 36 | Commit del lavoro del 24/10/2026 pomeriggio | due commit, codice e documento, perché i 5 punti toccano gli stessi file; solo dopo la prova dell'utente | proposta mia, in attesa dell'ok dell'utente |
+| 36 | Commit del lavoro del 24/10/2026 pomeriggio | proposta iniziale: due commit, codice e documento; sostituita dalla decisione 43 | proposta mia, superata |
 | 37 | Modo di lavorare | per ogni scelta di prodotto propongo opzioni con una consigliata e l'utente sceglie; poi procedo senza fermarmi; commit e push solo dopo la sua prova | utente, 24/10/2026 |
+| 38 | Divisione degli ordini | tre sotto-schede dentro "Ordini": Cucina, Cassa, Rider; Cassa e Rider vedono solo ordini già pronti | utente (idea e nota sui pronti), 24/10/2026 |
+| 39 | Cosa fa il cuoco | porta tutti gli ordini fino a Pronto; i tavoli pronti li segna anche Servito | utente, tra le opzioni proposte, 24/10/2026 |
+| 40 | Scelta del driver | solo nella sotto-scheda Rider, sulle consegne pronte | utente, 24/10/2026 |
+| 41 | Suono per sotto-scheda | Cucina per gli ordini nuovi; Cassa e Rider quando un loro ordine diventa pronto | utente, 24/10/2026 |
+| 42 | Ricordo della sotto-scheda e "Completati oggi" | ogni dispositivo riapre l'ultima sotto-scheda; sotto gli ordini da lavorare quelli completati oggi, in grigio | scelta mia, 24/10/2026 |
+| 43 | Commit del lavoro del 24/10/2026 pomeriggio | fatti 6 commit separati per funzione (piccole cose, telefono e Grazie, cucina e limiti, consegna, aspetto e foto, documento), ognuno controllato da solo con test e controllo del codice | utente ("più commit separati per features"), 24/10/2026 |
 
 ## Fonti (verificate il 22/10/2026 e il 24/10/2026)
 
