@@ -1,0 +1,45 @@
+.address-field {
+    position: relative;
+}
+
+.address-field-list {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 25;
+    max-height: 260px;
+    overflow-y: auto;
+    list-style: none;
+    border: 1px solid #525252;
+    border-radius: 8px;
+    background-color: #2e303f;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.address-field-option {
+    padding: 10px 14px;
+    border-bottom: 1px solid #3a3c4d;
+    color: #fff;
+    font-size: 14px;
+    line-height: 19px;
+    cursor: pointer;
+}
+
+.address-field-option:hover,
+.address-field-option.active {
+    background-color: #ec7d6a33;
+}
+
+.address-field-empty {
+    padding: 10px 14px;
+    color: #b0b5c1;
+    font-size: 14px;
+}
+
+.address-field-credits {
+    padding: 6px 14px;
+    color: #8a8f9c;
+    font-size: 11px;
+    text-align: right;
+}

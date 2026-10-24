@@ -13,6 +13,12 @@ import {
   verifyPassword,
 } from "./auth.js";
 import { query, setupDatabase, transaction } from "./db.js";
+import {
+  deliveryQuote,
+  deliverySettings,
+  isDeliveryAvailable,
+  isInItaly,
+} from "./delivery.js";
 import { TIME_ZONE, availableSlots, slotCapacity } from "./slots.js";
 
 const PORT = process.env.PORT || 4000;
@@ -43,6 +49,10 @@ const text = (value, min, max) =>
 
 const integer = (value, min, max) =>
   Number.isInteger(value) && value >= min && value <= max ? value : null;
+
+// Also with decimals, like kilometres and euro
+const decimal = (value, min, max) =>
+  Number.isFinite(value) && value >= min && value <= max ? value : null;
 
 // Italian mobile (3xx) or landline (0xx) number, with or without +39.
 // Saved as digits only, so the same number always looks the same.
@@ -120,6 +130,8 @@ const readOrder = async (req) => {
     customerName: null,
     customerPhone: null,
     customerAddress: null,
+    customerLat: null,
+    customerLon: null,
     scheduledAt: null,
   };
   if (!order.orderType) {
@@ -175,6 +187,12 @@ const readOrder = async (req) => {
     if (!order.customerAddress) {
       throw new RequestError("Inserisci l'indirizzo di consegna");
     }
+    // Coordinates of the address chosen among the suggestions
+    if (!isInItaly(body.customerLat, body.customerLon)) {
+      throw new RequestError("Scegli l'indirizzo dall'elenco dei suggerimenti");
+    }
+    order.customerLat = body.customerLat;
+    order.customerLon = body.customerLon;
   }
   // Checked against the free slots when the order is saved
   order.scheduledAt =
@@ -217,6 +235,27 @@ app.post("/api/orders", async (req, res) => {
     0
   );
 
+  // Delivery: inside the zone, above the minimum order, plus the fee of its distance
+  let delivery = { km: null, fee: 0 };
+  if (order.orderType === "consegna") {
+    const settings = await deliverySettings();
+    if (!isDeliveryAvailable(settings)) {
+      throw new RequestError("Le consegne non sono ancora disponibili");
+    }
+    delivery = deliveryQuote(settings, order.customerLat, order.customerLon);
+    if (!delivery.isInZone) {
+      throw new RequestError(
+        `L'indirizzo è fuori dalla zona di consegna (${delivery.km} km, massimo ${settings.radiusKm} km)`
+      );
+    }
+    if (totalCents < Math.round(settings.minOrder * 100)) {
+      throw new RequestError(
+        `Per la consegna l'ordine minimo è ${settings.minOrder.toFixed(2).replace(".", ",")} euro`
+      );
+    }
+  }
+  const deliveryCents = Math.round(delivery.fee * 100);
+
   const id = await transaction(async (client) => {
     if (order.scheduledAt) {
       // One order at a time, so two customers cannot take the last place in a slot
@@ -254,8 +293,9 @@ app.post("/api/orders", async (req, res) => {
     }
     const { rows } = await client.query(
       `INSERT INTO orders (order_type, tablet_id, table_number, customer_name,
-         customer_phone, customer_address, scheduled_at, total)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         customer_phone, customer_address, scheduled_at, total, customer_lat,
+         customer_lon, delivery_km, delivery_fee)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING id`,
       [
         order.orderType,
@@ -265,7 +305,11 @@ app.post("/api/orders", async (req, res) => {
         order.customerPhone,
         order.customerAddress,
         order.scheduledAt,
-        totalCents / 100,
+        (totalCents + deliveryCents) / 100,
+        order.customerLat,
+        order.customerLon,
+        delivery.km,
+        deliveryCents / 100,
       ]
     );
     for (const item of order.items) {
@@ -283,8 +327,37 @@ app.post("/api/orders", async (req, res) => {
     orderType: order.orderType,
     tableNumber: order.tableNumber,
     scheduledAt: order.scheduledAt,
-    total: totalCents / 100,
+    deliveryFee: deliveryCents / 100,
+    total: (totalCents + deliveryCents) / 100,
   });
+});
+
+// What the customer needs to know before choosing the delivery address
+app.get("/api/delivery", async (req, res) => {
+  const settings = await deliverySettings();
+  res.json({
+    isAvailable: isDeliveryAvailable(settings),
+    center: isDeliveryAvailable(settings)
+      ? { lat: settings.pizzeriaLat, lon: settings.pizzeriaLon }
+      : null,
+    radiusKm: settings.radiusKm,
+    minOrder: settings.minOrder,
+    fees: settings.fees,
+  });
+});
+
+// Distance and fee for the address chosen by the customer
+app.get("/api/delivery/quote", async (req, res) => {
+  const lat = Number(req.query.lat);
+  const lon = Number(req.query.lon);
+  if (!isInItaly(lat, lon)) {
+    throw new RequestError("Indirizzo non valido");
+  }
+  const settings = await deliverySettings();
+  if (!isDeliveryAvailable(settings)) {
+    throw new RequestError("Le consegne non sono ancora disponibili");
+  }
+  res.json(deliveryQuote(settings, lat, lon));
 });
 
 app.post("/api/admin/login", async (req, res) => {
@@ -334,6 +407,10 @@ app.get("/api/admin/orders", requireAdmin, async (req, res) => {
        orders.customer_address AS "customerAddress",
        orders.scheduled_at AS "scheduledAt",
        orders.driver_id AS "driverId",
+       orders.customer_lat AS "customerLat",
+       orders.customer_lon AS "customerLon",
+       orders.delivery_km::float8 AS "deliveryKm",
+       orders.delivery_fee::float8 AS "deliveryFee",
        orders.total::float8 AS total,
        orders.created_at AS "createdAt",
        json_agg(json_build_object(
@@ -459,6 +536,59 @@ app.put("/api/admin/opening-hours", requireAdmin, async (req, res) => {
     }
   });
   res.json(await openingHours());
+});
+
+app.get("/api/admin/delivery", requireAdmin, async (req, res) => {
+  res.json(await deliverySettings());
+});
+
+// The pizzeria address comes from the suggestions, like the customers' ones
+app.put("/api/admin/delivery", requireAdmin, async (req, res) => {
+  const body = req.body || {};
+  const pizzeriaAddress = text(body.pizzeriaAddress, 5, 200);
+  const radiusKm = decimal(body.radiusKm, 0.5, 50);
+  const minOrder = decimal(body.minOrder, 0, 500);
+  const fees = Array.isArray(body.fees)
+    ? body.fees.map((band) => ({
+        upToKm: decimal(band?.upToKm, 0.5, 50),
+        fee: decimal(band?.fee, 0, 50),
+      }))
+    : [];
+  if (!pizzeriaAddress || !isInItaly(body.pizzeriaLat, body.pizzeriaLon)) {
+    throw new RequestError("Scegli l'indirizzo della pizzeria dai suggerimenti");
+  }
+  if (radiusKm === null) {
+    throw new RequestError("Il raggio va da 0,5 a 50 km");
+  }
+  if (minOrder === null) {
+    throw new RequestError("L'ordine minimo va da 0 a 500 euro");
+  }
+  if (
+    fees.length === 0 ||
+    fees.length > 6 ||
+    fees.some((band) => band.upToKm === null || band.fee === null)
+  ) {
+    throw new RequestError(
+      "Fasce di costo non valide: da 1 a 6 fasce, km da 0,5 a 50, costo da 0 a 50 euro"
+    );
+  }
+  if (fees.some((band, index) => index > 0 && band.upToKm <= fees[index - 1].upToKm)) {
+    throw new RequestError("Le fasce di costo vanno messe dalla più vicina alla più lontana");
+  }
+  await query(
+    `UPDATE settings SET pizzeria_address = $1, pizzeria_lat = $2,
+       pizzeria_lon = $3, delivery_radius_km = $4, delivery_min_order = $5,
+       delivery_fees = $6`,
+    [
+      pizzeriaAddress,
+      body.pizzeriaLat,
+      body.pizzeriaLon,
+      radiusKm,
+      minOrder,
+      JSON.stringify(fees),
+    ]
+  );
+  res.json(await deliverySettings());
 });
 
 const kitchenSettings = async () => {

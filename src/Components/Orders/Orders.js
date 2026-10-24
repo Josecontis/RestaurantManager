@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-import { getSlots, getTablet, isValidPhone, orderTypeCode } from "../../api";
+import {
+  addressWithNumber,
+  getDelivery,
+  getDeliveryQuote,
+  getSlots,
+  getTablet,
+  isValidPhone,
+  orderTypeCode,
+} from "../../api";
+import { AddressField } from "../AddressField/AddressField";
 import { Button } from "../Button/Button";
 import { TextField } from "../TextField/TextField";
 import "./Orders.css";
@@ -27,6 +36,12 @@ export const Orders = ({
     isPhoneChecked && !isValidPhone(customerPhone)
       ? "Numero non valido: scrivi un cellulare o un fisso italiano, per esempio 333 123 4567"
       : null;
+  // Delivery: the address picked among the suggestions, its distance and fee
+  const [delivery, setDelivery] = useState(null);
+  const [place, setPlace] = useState(null);
+  const [houseNumber, setHouseNumber] = useState("");
+  const [quote, setQuote] = useState(null);
+  const [isAddressChecked, setIsAddressChecked] = useState(false);
   // On small screens the order opens full screen only when asked
   const [isOpen, setIsOpen] = useState(false);
   const isActive = foods.length !== 0;
@@ -44,6 +59,22 @@ export const Orders = ({
       : null;
   // Read at every render: a failed order can remove an unregistered tablet
   const tablet = getTablet();
+  const isDelivery = typeCode === "consegna";
+  const deliveryFee = isDelivery && quote?.isInZone ? quote.fee : 0;
+  const missingForMinimum =
+    isDelivery && delivery ? delivery.minOrder - total : 0;
+  let addressError = null;
+  if (quote && !quote.isInZone) {
+    addressError = `Fuori dalla zona di consegna: ${quote.km} km${
+      delivery ? `, massimo ${delivery.radiusKm} km` : ""
+    }`;
+  } else if (isAddressChecked && !place) {
+    addressError = "Scegli l'indirizzo dall'elenco dei suggerimenti";
+  }
+  const numberError =
+    isAddressChecked && place && !place.hasNumber && !houseNumber.trim()
+      ? "Scrivi il numero civico"
+      : null;
 
   useEffect(() => {
     if (!isActive) {
@@ -60,8 +91,41 @@ export const Orders = ({
       setCustomerAddress("");
       setIsPhoneChecked(false);
       setScheduledAt(null);
+      setPlace(null);
+      setHouseNumber("");
+      setQuote(null);
+      setIsAddressChecked(false);
     }
   }, [lastOrder]);
+
+  // Zone, minimum order and fees, read when the customer chooses the delivery
+  useEffect(() => {
+    if (!isDelivery || !isActive) {
+      return;
+    }
+    let isCurrent = true;
+    getDelivery()
+      .then((result) => isCurrent && setDelivery(result))
+      .catch(() => {});
+    return () => {
+      isCurrent = false;
+    };
+  }, [isDelivery, isActive]);
+
+  // Distance and fee of the picked address
+  useEffect(() => {
+    setQuote(null);
+    if (!place) {
+      return;
+    }
+    let isCurrent = true;
+    getDeliveryQuote(place.lat, place.lon)
+      .then((result) => isCurrent && setQuote(result))
+      .catch(() => {});
+    return () => {
+      isCurrent = false;
+    };
+  }, [place]);
 
   // Free times depend on the order size; they are read again after a refused order
   useEffect(() => {
@@ -84,6 +148,16 @@ export const Orders = ({
       setIsPhoneChecked(true);
       return;
     }
+    if (
+      isDelivery &&
+      (!place ||
+        (!place.hasNumber && !houseNumber.trim()) ||
+        (quote && !quote.isInZone) ||
+        missingForMinimum > 0)
+    ) {
+      setIsAddressChecked(true);
+      return;
+    }
     if (typeCode === "sul_posto") {
       onConfirm(tablet ? {} : { tableNumber: parseInt(tableNumber, 10) });
     } else if (typeCode === "ritiro") {
@@ -92,7 +166,9 @@ export const Orders = ({
       onConfirm({
         customerName,
         customerPhone,
-        customerAddress,
+        customerAddress: addressWithNumber(place, houseNumber),
+        customerLat: place.lat,
+        customerLon: place.lon,
         scheduledAt: selectedSlot,
       });
     }
@@ -209,18 +285,54 @@ export const Orders = ({
                   />
                 </>
               )}
-              {typeCode === "consegna" && (
-                <TextField
-                  placeholder="Indirizzo di consegna"
+              {isDelivery && delivery && !delivery.isAvailable && (
+                <div className="orders-note">
+                  Le consegne non sono ancora disponibili.
+                </div>
+              )}
+              {isDelivery && (!delivery || delivery.isAvailable) && (
+                <AddressField
+                  placeholder="Indirizzo di consegna (via, numero, città)"
                   value={customerAddress}
-                  onChange={(event) => setCustomerAddress(event.target.value)}
+                  center={delivery?.center}
+                  error={addressError}
+                  onChange={(text) => {
+                    setCustomerAddress(text);
+                    setPlace(null);
+                  }}
+                  onSelect={setPlace}
+                />
+              )}
+              {isDelivery && place && !place.hasNumber && (
+                <TextField
+                  placeholder="Numero civico"
+                  value={houseNumber}
+                  error={numberError}
+                  maxLength={10}
+                  onChange={(event) => setHouseNumber(event.target.value)}
                 />
               )}
             </div>
             {error && <div className="orders-error">{error}</div>}
+            {isDelivery && missingForMinimum > 0 && (
+              <div
+                className={isAddressChecked ? "orders-error" : "orders-note orders-minimum"}
+              >
+                Ordine minimo per la consegna: {formatPrice(delivery.minOrder)}{" "}
+                (mancano {formatPrice(missingForMinimum)})
+              </div>
+            )}
+            {deliveryFee > 0 && (
+              <div className="orders-fee">
+                <span>
+                  Consegna ({quote.km.toLocaleString("it-IT")} km)
+                </span>
+                <span>{formatPrice(deliveryFee)}</span>
+              </div>
+            )}
             <div className="orders-total">
               <span>Totale</span>
-              <span>{formatPrice(total)}</span>
+              <span>{formatPrice(total + deliveryFee)}</span>
             </div>
             <Button
               className="orders-button"

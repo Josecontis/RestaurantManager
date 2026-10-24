@@ -95,6 +95,72 @@ export const formatSlot = (time) =>
     timeZone: "Europe/Rome",
   });
 
+// { isAvailable, center: { lat, lon }, radiusKm, minOrder, fees: [{ upToKm, fee }] }
+export const getDelivery = () => request("/api/delivery");
+
+// { km, isInZone, fee } for the address chosen by the customer
+export const getDeliveryQuote = (lat, lon) =>
+  request(`/api/delivery/quote?lat=${lat}&lon=${lon}`);
+
+// Address suggestions from Photon: OpenStreetMap data, free and without a key.
+// Only Italian streets and house numbers, the nearest to lat, lon first.
+const PHOTON_URL = "https://photon.komoot.io/api/";
+const ITALY_BOX = "6,35,19,47.5";
+
+export const searchAddresses = async (text, lat, lon) => {
+  const params = new URLSearchParams({ q: text, limit: "8", bbox: ITALY_BOX });
+  if (lat !== undefined && lon !== undefined) {
+    params.set("lat", lat);
+    params.set("lon", lon);
+  }
+  let data;
+  try {
+    const response = await fetch(`${PHOTON_URL}?${params}`);
+    data = await response.json();
+  } catch {
+    throw new ApiError("Suggerimenti non disponibili, riprova tra poco", 0);
+  }
+  const places = (data.features || [])
+    .filter(
+      (feature) =>
+        feature.properties.countrycode === "IT" &&
+        ["house", "street"].includes(feature.properties.type)
+    )
+    .map(({ properties, geometry }) => {
+      const street = properties.street || properties.name;
+      const cityLine = [
+        properties.postcode,
+        properties.city || properties.town || properties.village,
+      ]
+        .filter(Boolean)
+        .join(" ");
+      const firstLine = [street, properties.housenumber]
+        .filter(Boolean)
+        .join(" ");
+      return {
+        label: [firstLine, cityLine].filter(Boolean).join(", "),
+        street,
+        cityLine,
+        hasNumber: Boolean(properties.housenumber),
+        lat: geometry.coordinates[1],
+        lon: geometry.coordinates[0],
+      };
+    });
+  // The same address can come twice, for example a shop and its building
+  return places.filter(
+    (place, index) =>
+      places.findIndex((other) => other.label === place.label) === index
+  );
+};
+
+// Address of a place without house number, completed with the one written by the customer
+export const addressWithNumber = (place, number) =>
+  place.hasNumber
+    ? place.label
+    : `${place.street} ${number.trim()}${
+        place.cityLine ? `, ${place.cityLine}` : ""
+      }`;
+
 // Same rule as the server: Italian mobile (3xx) or landline (0xx), with or without +39
 export const isValidPhone = (value) =>
   /^(3[0-9]{8,9}|0[0-9]{5,10})$/.test(
@@ -159,6 +225,12 @@ export const getOpeningHours = () => adminRequest("/api/admin/opening-hours");
 
 export const saveOpeningHours = (week) =>
   adminRequest("/api/admin/opening-hours", { method: "PUT", body: week });
+
+// { pizzeriaAddress, pizzeriaLat, pizzeriaLon, radiusKm, minOrder, fees }
+export const getAdminDelivery = () => adminRequest("/api/admin/delivery");
+
+export const saveAdminDelivery = (delivery) =>
+  adminRequest("/api/admin/delivery", { method: "PUT", body: delivery });
 
 // { pizzasPerHour, maxDishesPerOrder, maxOrdersPerPhone }
 export const getKitchen = () => adminRequest("/api/admin/kitchen");

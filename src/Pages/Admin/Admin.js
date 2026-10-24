@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { adminLogout, getAdmin } from "../../api";
 import { Button } from "../../Components/Button/Button";
+import { AdminDeliveries } from "./AdminDeliveries";
 import { AdminDrivers } from "./AdminDrivers";
 import { AdminHours } from "./AdminHours";
 import { AdminLogin } from "./AdminLogin";
@@ -10,6 +11,7 @@ import "./Admin.css";
 
 const sections = [
   { label: "Ordini", component: AdminOrders },
+  { label: "Consegne", component: AdminDeliveries },
   { label: "Driver", component: AdminDrivers },
   { label: "Orari", component: AdminHours },
   { label: "Tablet", component: AdminTablets },

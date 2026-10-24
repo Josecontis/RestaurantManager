@@ -264,6 +264,18 @@
     min-height: 80px;
 }
 
+.orders-minimum {
+    margin: 0 0 12px;
+}
+
+.orders-fee {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    color: #b0b5c1;
+    font-size: 15px;
+}
+
 .orders-slots {
     margin-bottom: 5px;
 }

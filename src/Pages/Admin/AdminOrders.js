@@ -42,7 +42,7 @@ const completedLabels = {
   consegna: "Consegnato",
 };
 
-const statusLabel = (status, orderType) =>
+export const statusLabel = (status, orderType) =>
   status === "completato" ? completedLabels[orderType] : statusLabels[status];
 
 // undefined for a completed order
@@ -249,6 +249,16 @@ export const AdminOrders = ({ onUnauthorized }) => {
                     <span>{formatPrice(item.quantity * item.unitPrice)}</span>
                   </li>
                 ))}
+                {order.deliveryFee > 0 && (
+                  <li>
+                    <span>
+                      Consegna
+                      {order.deliveryKm !== null &&
+                        ` (${order.deliveryKm.toLocaleString("it-IT")} km)`}
+                    </span>
+                    <span>{formatPrice(order.deliveryFee)}</span>
+                  </li>
+                )}
               </ul>
               <div className="admin-card-total">
                 <span>Totale</span>

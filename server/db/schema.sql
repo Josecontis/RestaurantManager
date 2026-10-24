@@ -63,6 +63,12 @@ CREATE TABLE IF NOT EXISTS orders (
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'nuovo'
   CHECK (status IN ('nuovo', 'in_preparazione', 'pronto', 'completato'));
 
+-- Where a delivery goes and what it costs, saved when the order arrives
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_lat DOUBLE PRECISION;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_lon DOUBLE PRECISION;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_km NUMERIC(5, 1);
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_fee NUMERIC(8, 2) NOT NULL DEFAULT 0;
+
 CREATE TABLE IF NOT EXISTS order_items (
   id SERIAL PRIMARY KEY,
   order_id INTEGER NOT NULL REFERENCES orders (id) ON DELETE CASCADE,
@@ -95,3 +101,14 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 
 INSERT INTO settings (id) VALUES (1) ON CONFLICT DO NOTHING;
+
+-- Delivery: pizzeria position (empty until the admin sets it), zone radius in a
+-- straight line, minimum order without the fee, fee bands sorted by distance:
+-- [{ "upToKm": 3, "fee": 2 }, ...], the last band also covers the rest of the zone
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS pizzeria_address TEXT;
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS pizzeria_lat DOUBLE PRECISION;
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS pizzeria_lon DOUBLE PRECISION;
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS delivery_radius_km NUMERIC(4, 1) NOT NULL DEFAULT 5;
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS delivery_min_order NUMERIC(8, 2) NOT NULL DEFAULT 10;
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS delivery_fees JSONB NOT NULL
+  DEFAULT '[{"upToKm": 3, "fee": 2}, {"upToKm": 5, "fee": 3}]';
